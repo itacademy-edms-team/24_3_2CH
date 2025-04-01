@@ -1,0 +1,39 @@
+﻿@page
+@model MyImageBoard.Pages.ThreadPages.NewThreadModel
+@{
+    ViewData["Title"] = "Create New Thread";
+}
+
+<h1>Create New Thread</h1>
+
+<form method="post">
+    <div class="form-group">
+        <label for="title">Title:</label>
+        <input type="text" id="title" name="Title" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label for="text">Text:</label>
+        <textarea id="text" name="Text" class="form-control" rows="5"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Create Thread</button>
+</form>
+
+@if (!string.IsNullOrEmpty(Model.Message))
+{
+    <div class="alert alert-success" style="margin-top: 20px;">
+        @Model.Message
+    </div>
+}
+
+<style>
+    .form-group {
+        margin-bottom: 15px;
+    }
+    .form-control {
+        width: 100%;
+        max-width: 500px;
+    }
+    .btn {
+        margin-top: 10px;
+    }
+</style>
