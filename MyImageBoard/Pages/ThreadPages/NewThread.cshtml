@@ -4,6 +4,14 @@
     ViewData["Title"] = "Create New Thread";
 }
 
+@section Styles {
+    <link rel="stylesheet" href="~/css/NewThread.css" />
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
+
 <h1>Create New Thread</h1>
 
 <form method="post" enctype="multipart/form-data">
@@ -28,28 +36,4 @@
     <div class="alert alert-danger" style="margin-top: 20px;">
         @Model.ErrorMessage
     </div>
-}
-
-<style>
-    .form-group {
-        margin-bottom: 15px;
-    }
-
-    .form-control {
-        width: 100%;
-        max-width: 500px;
-    }
-
-    .btn {
-        margin-top: 10px;
-    }
-
-    .text-danger {
-        display: block;
-        font-size: 0.875em;
-    }
-</style>
-
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
 }

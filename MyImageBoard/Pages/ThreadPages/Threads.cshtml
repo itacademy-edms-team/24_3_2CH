@@ -4,6 +4,14 @@
     ViewData["Title"] = "All Threads";
 }
 
+@section Styles {
+    <link rel="stylesheet" href="~/css/Threads.css" />
+}
+
+@section Scripts {
+    <script src="~/js/ImageViewer.js"></script>
+}
+
 <h1>All Threads</h1>
 
 @if (Model.Threads == null || !Model.Threads.Any())
@@ -49,96 +57,3 @@ else
         </div>
     </div>
 </div>
-
-<style>
-    .threads-list {
-        margin-top: 20px;
-    }
-
-    .thread-item {
-        border: 1px solid #ddd;
-        padding: 15px;
-        margin-bottom: 20px;
-        border-radius: 5px;
-    }
-
-    .image-gallery {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-top: 10px;
-    }
-
-    .thread-image {
-        max-width: 200px;
-        height: auto;
-        border: 1px solid #ccc;
-        border-radius: 3px;
-        cursor: pointer;
-    }
-
-    .modal-dialog {
-        max-width: none; /* Убираем фиксированную ширину */
-    }
-
-    .modal-content {
-        background-color: transparent; /* Прозрачный фон для минимализма */
-        border: none; /* Убираем границы */
-    }
-
-    .modal-body {
-        padding: 0; /* Убираем отступы */
-    }
-
-    .modal-image {
-        display: block;
-        max-width: 90vw; /* Максимальная ширина — 90% ширины экрана */
-        max-height: 90vh; /* Максимальная высота — 90% высоты экрана */
-        width: auto;
-        height: auto;
-        object-fit: contain; /* Сохраняем пропорции */
-    }
-</style>
-
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const modal = document.getElementById('imageModal');
-        const modalImage = document.getElementById('modalImage');
-        const modalDialog = document.querySelector('#imageModal .modal-dialog');
-
-        modal.addEventListener('show.bs.modal', (event) => {
-            const imageUrl = event.relatedTarget.getAttribute('data-bs-image');
-            modalImage.src = imageUrl;
-
-            // Ждём загрузки изображения, чтобы получить его размеры
-            modalImage.onload = () => {
-                const imgWidth = modalImage.naturalWidth;
-                const imgHeight = modalImage.naturalHeight;
-                const maxWidth = window.innerWidth * 0.9; // 90% ширины экрана
-                const maxHeight = window.innerHeight * 0.9; // 90% высоты экрана
-
-                // Вычисляем размеры с сохранением пропорций
-                let newWidth = imgWidth;
-                let newHeight = imgHeight;
-                if (newWidth > maxWidth) {
-                    newHeight = (maxWidth / newWidth) * newHeight;
-                    newWidth = maxWidth;
-                }
-                if (newHeight > maxHeight) {
-                    newWidth = (maxHeight / newHeight) * newWidth;
-                    newHeight = maxHeight;
-                }
-
-                // Устанавливаем размеры модального окна
-                modalDialog.style.width = `${newWidth}px`;
-                modalDialog.style.height = `${newHeight}px`;
-            };
-        });
-
-        // Сбрасываем размеры при закрытии модального окна
-        modal.addEventListener('hidden.bs.modal', () => {
-            modalDialog.style.width = '';
-            modalDialog.style.height = '';
-        });
-    });
-</script>

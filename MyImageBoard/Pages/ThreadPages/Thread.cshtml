@@ -4,6 +4,14 @@
     ViewData["Title"] = Model.Thread?.Title ?? "Thread";
 }
 
+@section Styles {
+    <link rel="stylesheet" href="~/css/Thread.css" />
+}
+
+@section Scripts {
+    <script src="~/js/ImageViewer.js"></script>
+}
+
 <h1>@Model.Thread.Title</h1>
 
 <div class="thread-content">
@@ -86,114 +94,3 @@ else
         </div>
     </div>
 </div>
-
-<style>
-    .thread-content {
-        margin-bottom: 20px;
-    }
-
-    .image-gallery {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-top: 10px;
-    }
-
-    .thread-image {
-        max-width: 200px;
-        height: auto;
-        border: 1px solid #ccc;
-        border-radius: 3px;
-        cursor: pointer;
-    }
-
-    .comments-list {
-        margin-top: 20px;
-    }
-
-    .comment-item {
-        border: 1px solid #ddd;
-        padding: 10px;
-        margin-bottom: 10px;
-        border-radius: 5px;
-    }
-
-    .form-group {
-        margin-bottom: 15px;
-    }
-
-    .form-control {
-        width: 100%;
-        max-width: 500px;
-    }
-
-    .btn {
-        margin-top: 10px;
-    }
-
-    .modal-dialog {
-        max-width: none;
-    }
-
-    .modal-content {
-        background-color: transparent;
-        border: none;
-    }
-
-    .modal-body {
-        padding: 0;
-    }
-
-    .modal-image {
-        display: block;
-        max-width: 90vw;
-        max-height: 90vh;
-        width: auto;
-        height: auto;
-        object-fit: contain;
-    }
-
-    .text-danger {
-        display: block;
-        font-size: 0.875em;
-    }
-</style>
-
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const modal = document.getElementById('imageModal');
-        const modalImage = document.getElementById('modalImage');
-        const modalDialog = document.querySelector('#imageModal .modal-dialog');
-
-        modal.addEventListener('show.bs.modal', (event) => {
-            const imageUrl = event.relatedTarget.getAttribute('data-bs-image');
-            modalImage.src = imageUrl;
-
-            modalImage.onload = () => {
-                const imgWidth = modalImage.naturalWidth;
-                const imgHeight = modalImage.naturalHeight;
-                const maxWidth = window.innerWidth * 0.9;
-                const maxHeight = window.innerHeight * 0.9;
-
-                let newWidth = imgWidth;
-                let newHeight = imgHeight;
-                if (newWidth > maxWidth) {
-                    newHeight = (maxWidth / newWidth) * newHeight;
-                    newWidth = maxWidth;
-                }
-                if (newHeight > maxHeight) {
-                    newWidth = (maxHeight / newHeight) * newWidth;
-                    newHeight = maxHeight;
-                }
-
-                modalDialog.style.width = `${newWidth}px`;
-                modalDialog.style.height = `${newHeight}px`;
-            };
-        });
-
-        modal.addEventListener('hidden.bs.modal', () => {
-            modalDialog.style.width = '';
-            modalDialog.style.height = '';
-        });
-    });
-</script>
