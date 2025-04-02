@@ -1,0 +1,111 @@
+﻿@page "{id:int}"
+@model MyImageBoard.Pages.ThreadPages.ThreadModel
+@{
+    ViewData["Title"] = Model.Thread?.Title ?? "Thread";
+}
+
+<h1>@Model.Thread.Title</h1>
+
+<div class="thread-content">
+    <p>@Model.Thread.Text</p>
+
+    @if (Model.Thread.Images != null && Model.Thread.Images.Any())
+    {
+        <h3>Images:</h3>
+        <div class="image-gallery">
+            @foreach (var image in Model.Thread.Images)
+            {
+                <img src="@image.ImageUrl" alt="Thread image" class="thread-image" />
+            }
+        </div>
+    }
+</div>
+
+<h2>Comments</h2>
+@if (Model.Comments == null || !Model.Comments.Any())
+{
+    <p>No comments yet.</p>
+}
+else
+{
+    <div class="comments-list">
+        @foreach (var comment in Model.Comments)
+        {
+            <div class="comment-item">
+                <p>@comment.Text</p>
+                @if (comment.Images != null && comment.Images.Any())
+                {
+                    <div class="image-gallery">
+                        @foreach (var image in comment.Images)
+                        {
+                            <img src="@image.ImageUrl" alt="Comment image" class="thread-image" />
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </div>
+}
+
+<h3>Add a Comment</h3>
+<form method="post" enctype="multipart/form-data">
+    <div class="form-group">
+        <textarea name="CommentText" class="form-control" rows="3" placeholder="Write your comment..."></textarea>
+    </div>
+    <div class="form-group">
+        <label for="commentImage">Attach Image:</label>
+        <input type="file" id="commentImage" name="CommentImage" class="form-control" accept="image/*" />
+    </div>
+    <button type="submit" class="btn btn-primary">Отправить в тред</button>
+</form>
+
+@if (!string.IsNullOrEmpty(Model.Message))
+{
+    <div class="alert alert-success" style="margin-top: 20px;">
+        @Model.Message
+    </div>
+}
+
+<style>
+    .thread-content {
+        margin-bottom: 20px;
+    }
+
+    .image-gallery {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .thread-image {
+        max-width: 200px;
+        height: auto;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+    }
+
+    .comments-list {
+        margin-top: 20px;
+    }
+
+    .comment-item {
+        border: 1px solid #ddd;
+        padding: 10px;
+        margin-bottom: 10px;
+        border-radius: 5px;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-control {
+        width: 100%;
+        max-width: 500px;
+    }
+
+    .btn {
+        margin-top: 10px;
+    }
+</style>
