@@ -20,6 +20,7 @@ namespace MyImageBoard.Pages.ThreadPages
         public Tread Thread { get; set; }
         public List<Comment> Comments { get; set; }
         public string Message { get; set; }
+        public string ErrorMessage { get; set; }
 
         [BindProperty]
         public IFormFile CommentImage { get; set; }
@@ -38,6 +39,8 @@ namespace MyImageBoard.Pages.ThreadPages
             }
 
             Comments = Thread.Comments?.ToList() ?? new List<Comment>();
+            Message = TempData["Message"]?.ToString();
+            ErrorMessage = TempData["ErrorMessage"]?.ToString();
             return Page();
         }
 
@@ -52,54 +55,46 @@ namespace MyImageBoard.Pages.ThreadPages
                 return NotFound();
             }
 
-            if (!string.IsNullOrEmpty(CommentText))
+            // Проверка: нужен либо текст, либо изображение
+            if (string.IsNullOrEmpty(CommentText) && (CommentImage == null || CommentImage.Length == 0))
             {
-                var comment = new Comment { Text = CommentText };
-
-                if (CommentImage != null && CommentImage.Length > 0)
-                {
-                    var uploadsFolder = Path.Combine(_environment.WebRootPath, "images");
-                    if (!Directory.Exists(uploadsFolder))
-                    {
-                        Directory.CreateDirectory(uploadsFolder);
-                    }
-
-                    var uniqueFileName = Guid.NewGuid().ToString() + Path.GetExtension(CommentImage.FileName);
-                    var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-                    using (var fileStream = new FileStream(filePath, FileMode.Create))
-                    {
-                        await CommentImage.CopyToAsync(fileStream);
-                    }
-
-                    comment.Images = new List<Image>
-                    {
-                        new Image { ImageUrl = "/images/" + uniqueFileName }
-                    };
-                }
-
-                _context.Comments.Add(comment);
-                await _context.SaveChangesAsync();
-
-                // Добавляем связь в Tread_Comment
-                _context.Database.ExecuteSqlRaw(
-                    "INSERT INTO Tread_Comment (tread_id, comment_id) VALUES ({0}, {1})",
-                    Thread.Id, comment.Id);
-
-                // Перенаправляем на ту же страницу через GET с сообщением
-                TempData["Message"] = "Comment added successfully!";
+                TempData["ErrorMessage"] = "Comment must have either text or an image.";
                 return RedirectToPage("./Thread", new { id });
             }
 
-            // Если комментарий пустой, перезагружаем страницу
-            Thread = await _context.Treads
-                .Include(t => t.Images)
-                .Include(t => t.Comments)
-                    .ThenInclude(c => c.Images)
-                .FirstOrDefaultAsync(t => t.Id == id);
+            var comment = new Comment { Text = CommentText };
 
-            Comments = Thread.Comments?.ToList() ?? new List<Comment>();
-            return Page();
+            if (CommentImage != null && CommentImage.Length > 0)
+            {
+                var uploadsFolder = Path.Combine(_environment.WebRootPath, "images");
+                if (!Directory.Exists(uploadsFolder))
+                {
+                    Directory.CreateDirectory(uploadsFolder);
+                }
+
+                var uniqueFileName = Guid.NewGuid().ToString() + Path.GetExtension(CommentImage.FileName);
+                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    await CommentImage.CopyToAsync(fileStream);
+                }
+
+                comment.Images = new List<Image>
+                {
+                    new Image { ImageUrl = "/images/" + uniqueFileName }
+                };
+            }
+
+            _context.Comments.Add(comment);
+            await _context.SaveChangesAsync();
+
+            _context.Database.ExecuteSqlRaw(
+                "INSERT INTO Tread_Comment (tread_id, comment_id) VALUES ({0}, {1})",
+                Thread.Id, comment.Id);
+
+            TempData["Message"] = "Comment added successfully!";
+            return RedirectToPage("./Thread", new { id });
         }
     }
 }

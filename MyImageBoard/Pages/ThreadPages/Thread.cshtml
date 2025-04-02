@@ -2,7 +2,6 @@
 @model MyImageBoard.Pages.ThreadPages.ThreadModel
 @{
     ViewData["Title"] = Model.Thread?.Title ?? "Thread";
-    Model.Message = TempData["Message"]?.ToString();
 }
 
 <h1>@Model.Thread.Title</h1>
@@ -66,6 +65,12 @@ else
         @Model.Message
     </div>
 }
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger" style="margin-top: 20px;">
+        @Model.ErrorMessage
+    </div>
+}
 
 <!-- Модальное окно Bootstrap -->
 <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
@@ -126,25 +131,25 @@ else
     }
 
     .modal-dialog {
-        max-width: none; /* Убираем фиксированную ширину */
+        max-width: none;
     }
 
     .modal-content {
-        background-color: transparent; /* Прозрачный фон */
-        border: none; /* Убираем границы */
+        background-color: transparent;
+        border: none;
     }
 
     .modal-body {
-        padding: 0; /* Убираем отступы */
+        padding: 0;
     }
 
     .modal-image {
         display: block;
-        max-width: 90vw; /* Максимальная ширина — 90% ширины экрана */
-        max-height: 90vh; /* Максимальная высота — 90% высоты экрана */
+        max-width: 90vw;
+        max-height: 90vh;
         width: auto;
         height: auto;
-        object-fit: contain; /* Сохраняем пропорции */
+        object-fit: contain;
     }
 </style>
 
@@ -158,14 +163,12 @@ else
             const imageUrl = event.relatedTarget.getAttribute('data-bs-image');
             modalImage.src = imageUrl;
 
-            // Ждём загрузки изображения
             modalImage.onload = () => {
                 const imgWidth = modalImage.naturalWidth;
                 const imgHeight = modalImage.naturalHeight;
-                const maxWidth = window.innerWidth * 0.9; // 90% ширины экрана
-                const maxHeight = window.innerHeight * 0.9; // 90% высоты экрана
+                const maxWidth = window.innerWidth * 0.9;
+                const maxHeight = window.innerHeight * 0.9;
 
-                // Вычисляем размеры с сохранением пропорций
                 let newWidth = imgWidth;
                 let newHeight = imgHeight;
                 if (newWidth > maxWidth) {
@@ -177,13 +180,11 @@ else
                     newHeight = maxHeight;
                 }
 
-                // Устанавливаем размеры модального окна
                 modalDialog.style.width = `${newWidth}px`;
                 modalDialog.style.height = `${newHeight}px`;
             };
         });
 
-        // Сбрасываем размеры при закрытии
         modal.addEventListener('hidden.bs.modal', () => {
             modalDialog.style.width = '';
             modalDialog.style.height = '';

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Http;
+using System.ComponentModel.DataAnnotations; // Для атрибутов валидации
 
 namespace MyImageBoard.Pages.ThreadPages
 {
@@ -15,16 +16,28 @@ namespace MyImageBoard.Pages.ThreadPages
             _environment = environment;
         }
 
+        // Добавляем атрибут валидации для Thread
         [BindProperty]
-        public Tread Thread { get; set; }
+        public InputModel ThreadInput { get; set; }
 
         [BindProperty]
         public IFormFile ImageFile { get; set; }
 
         public string Message { get; set; }
+        public string ErrorMessage { get; set; } // Добавляем для ошибок
+
+        // Внутренний класс для валидации
+        public class InputModel
+        {
+            [Required(ErrorMessage = "Title is required.")]
+            public string Title { get; set; }
+            public string Text { get; set; }
+            public List<Image> Images { get; set; }
+        }
 
         public void OnGet()
         {
+            ThreadInput = new InputModel();
         }
 
         public async Task<IActionResult> OnPostAsync()
@@ -34,12 +47,13 @@ namespace MyImageBoard.Pages.ThreadPages
                 return Page();
             }
 
-            // Инициализируем коллекцию Images, если она null
-            Thread.Images = Thread.Images ?? new List<Image>();
-
-            // Сохраняем тред (без изображений пока)
-            _context.Treads.Add(Thread);
-            await _context.SaveChangesAsync();
+            // Создаём объект Tread из ThreadInput
+            var thread = new Tread
+            {
+                Title = ThreadInput.Title,
+                Text = ThreadInput.Text,
+                Images = ThreadInput.Images ?? new List<Image>()
+            };
 
             // Обрабатываем изображение
             if (ImageFile != null && ImageFile.Length > 0)
@@ -58,21 +72,18 @@ namespace MyImageBoard.Pages.ThreadPages
                     await ImageFile.CopyToAsync(fileStream);
                 }
 
-                // Создаем объект Image и добавляем его в коллекцию Thread.Images
-                var image = new Image
+                thread.Images.Add(new Image
                 {
                     ImageUrl = "/images/" + uniqueFileName
-                };
-                Thread.Images.Add(image);
-
-                // Сохраняем изменения (EF Core сам обновит таблицу Tread_Image)
-                await _context.SaveChangesAsync();
+                });
             }
 
-            Message = "Thread created successfully!";
-            Thread = new Tread();
+            // Сохраняем тред
+            _context.Treads.Add(thread);
+            await _context.SaveChangesAsync();
 
-            return Page();
+            TempData["Message"] = "Thread created successfully!";
+            return RedirectToPage("./Threads");
         }
     }
 }
