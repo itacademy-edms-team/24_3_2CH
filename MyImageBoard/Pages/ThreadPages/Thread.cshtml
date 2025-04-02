@@ -2,6 +2,7 @@
 @model MyImageBoard.Pages.ThreadPages.ThreadModel
 @{
     ViewData["Title"] = Model.Thread?.Title ?? "Thread";
+    Model.Message = TempData["Message"]?.ToString();
 }
 
 <h1>@Model.Thread.Title</h1>
@@ -15,7 +16,7 @@
         <div class="image-gallery">
             @foreach (var image in Model.Thread.Images)
             {
-                <img src="@image.ImageUrl" alt="Thread image" class="thread-image" />
+                <img src="@image.ImageUrl" alt="Thread image" class="thread-image" data-bs-toggle="modal" data-bs-target="#imageModal" data-bs-image="@image.ImageUrl" />
             }
         </div>
     }
@@ -38,7 +39,7 @@ else
                     <div class="image-gallery">
                         @foreach (var image in comment.Images)
                         {
-                            <img src="@image.ImageUrl" alt="Comment image" class="thread-image" />
+                            <img src="@image.ImageUrl" alt="Comment image" class="thread-image" data-bs-toggle="modal" data-bs-target="#imageModal" data-bs-image="@image.ImageUrl" />
                         }
                     </div>
                 }
@@ -66,6 +67,20 @@ else
     </div>
 }
 
+<!-- Модальное окно Bootstrap -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <img src="" id="modalImage" class="modal-image" alt="Full screen image" />
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
     .thread-content {
         margin-bottom: 20px;
@@ -83,6 +98,7 @@ else
         height: auto;
         border: 1px solid #ccc;
         border-radius: 3px;
+        cursor: pointer;
     }
 
     .comments-list {
@@ -108,4 +124,69 @@ else
     .btn {
         margin-top: 10px;
     }
+
+    .modal-dialog {
+        max-width: none; /* Убираем фиксированную ширину */
+    }
+
+    .modal-content {
+        background-color: transparent; /* Прозрачный фон */
+        border: none; /* Убираем границы */
+    }
+
+    .modal-body {
+        padding: 0; /* Убираем отступы */
+    }
+
+    .modal-image {
+        display: block;
+        max-width: 90vw; /* Максимальная ширина — 90% ширины экрана */
+        max-height: 90vh; /* Максимальная высота — 90% высоты экрана */
+        width: auto;
+        height: auto;
+        object-fit: contain; /* Сохраняем пропорции */
+    }
 </style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const modal = document.getElementById('imageModal');
+        const modalImage = document.getElementById('modalImage');
+        const modalDialog = document.querySelector('#imageModal .modal-dialog');
+
+        modal.addEventListener('show.bs.modal', (event) => {
+            const imageUrl = event.relatedTarget.getAttribute('data-bs-image');
+            modalImage.src = imageUrl;
+
+            // Ждём загрузки изображения
+            modalImage.onload = () => {
+                const imgWidth = modalImage.naturalWidth;
+                const imgHeight = modalImage.naturalHeight;
+                const maxWidth = window.innerWidth * 0.9; // 90% ширины экрана
+                const maxHeight = window.innerHeight * 0.9; // 90% высоты экрана
+
+                // Вычисляем размеры с сохранением пропорций
+                let newWidth = imgWidth;
+                let newHeight = imgHeight;
+                if (newWidth > maxWidth) {
+                    newHeight = (maxWidth / newWidth) * newHeight;
+                    newWidth = maxWidth;
+                }
+                if (newHeight > maxHeight) {
+                    newWidth = (maxHeight / newHeight) * newWidth;
+                    newHeight = maxHeight;
+                }
+
+                // Устанавливаем размеры модального окна
+                modalDialog.style.width = `${newWidth}px`;
+                modalDialog.style.height = `${newHeight}px`;
+            };
+        });
+
+        // Сбрасываем размеры при закрытии
+        modal.addEventListener('hidden.bs.modal', () => {
+            modalDialog.style.width = '';
+            modalDialog.style.height = '';
+        });
+    });
+</script>

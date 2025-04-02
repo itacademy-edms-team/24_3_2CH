@@ -43,7 +43,6 @@ namespace MyImageBoard.Pages.ThreadPages
 
         public async Task<IActionResult> OnPostAsync(int id, string CommentText)
         {
-            // Загружаем только тред без комментариев для добавления нового
             Thread = await _context.Treads
                 .Include(t => t.Images)
                 .FirstOrDefaultAsync(t => t.Id == id);
@@ -57,7 +56,6 @@ namespace MyImageBoard.Pages.ThreadPages
             {
                 var comment = new Comment { Text = CommentText };
 
-                // Обработка изображения
                 if (CommentImage != null && CommentImage.Length > 0)
                 {
                     var uploadsFolder = Path.Combine(_environment.WebRootPath, "images");
@@ -80,19 +78,20 @@ namespace MyImageBoard.Pages.ThreadPages
                     };
                 }
 
-                // Добавляем комментарий в таблицу Comments
                 _context.Comments.Add(comment);
                 await _context.SaveChangesAsync();
 
-                // Создаем запись в таблице Tread_Comment вручную
+                // Добавляем связь в Tread_Comment
                 _context.Database.ExecuteSqlRaw(
                     "INSERT INTO Tread_Comment (tread_id, comment_id) VALUES ({0}, {1})",
                     Thread.Id, comment.Id);
 
-                Message = "Comment added successfully!";
+                // Перенаправляем на ту же страницу через GET с сообщением
+                TempData["Message"] = "Comment added successfully!";
+                return RedirectToPage("./Thread", new { id });
             }
 
-            // Перезагружаем тред с комментариями для отображения
+            // Если комментарий пустой, перезагружаем страницу
             Thread = await _context.Treads
                 .Include(t => t.Images)
                 .Include(t => t.Comments)
