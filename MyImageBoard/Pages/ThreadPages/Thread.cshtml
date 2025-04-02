@@ -50,10 +50,11 @@ else
 <h3>Add a Comment</h3>
 <form method="post" enctype="multipart/form-data">
     <div class="form-group">
-        <textarea name="CommentText" class="form-control" rows="3" placeholder="Write your comment..."></textarea>
+        <textarea name="CommentText" class="form-control" rows="3" placeholder="Write your comment..." required></textarea>
+        <span class="text-danger" style="display: none;">Comment text is required.</span>
     </div>
     <div class="form-group">
-        <label for="commentImage">Attach Image:</label>
+        <label for="commentImage">Attach Image (optional):</label>
         <input type="file" id="commentImage" name="CommentImage" class="form-control" accept="image/*" />
     </div>
     <button type="submit" class="btn btn-primary">Отправить в тред</button>
@@ -150,6 +151,11 @@ else
         width: auto;
         height: auto;
         object-fit: contain;
+    }
+
+    .text-danger {
+        display: block;
+        font-size: 0.875em;
     }
 </style>
 

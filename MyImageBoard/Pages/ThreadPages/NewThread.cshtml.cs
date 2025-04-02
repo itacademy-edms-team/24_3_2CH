@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Http;
-using System.ComponentModel.DataAnnotations; // Для атрибутов валидации
+using System.ComponentModel.DataAnnotations;
 
 namespace MyImageBoard.Pages.ThreadPages
 {
@@ -16,35 +16,34 @@ namespace MyImageBoard.Pages.ThreadPages
             _environment = environment;
         }
 
-        // Добавляем атрибут валидации для Thread
         [BindProperty]
         public InputModel ThreadInput { get; set; }
 
         [BindProperty]
         public IFormFile ImageFile { get; set; }
 
-        public string Message { get; set; }
-        public string ErrorMessage { get; set; } // Добавляем для ошибок
+        public string ErrorMessage { get; set; } // Оставляем только ErrorMessage
 
-        // Внутренний класс для валидации
         public class InputModel
         {
             [Required(ErrorMessage = "Title is required.")]
             public string Title { get; set; }
             public string Text { get; set; }
-            public List<Image> Images { get; set; }
         }
 
         public void OnGet()
         {
             ThreadInput = new InputModel();
+            ErrorMessage = TempData["ErrorMessage"]?.ToString();
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
-            if (!ModelState.IsValid)
+            // Проверяем только Title явно
+            if (string.IsNullOrEmpty(ThreadInput.Title))
             {
-                return Page();
+                TempData["ErrorMessage"] = "Title is required.";
+                return RedirectToPage("./NewThread");
             }
 
             // Создаём объект Tread из ThreadInput
@@ -52,7 +51,7 @@ namespace MyImageBoard.Pages.ThreadPages
             {
                 Title = ThreadInput.Title,
                 Text = ThreadInput.Text,
-                Images = ThreadInput.Images ?? new List<Image>()
+                Images = new List<Image>()
             };
 
             // Обрабатываем изображение
@@ -82,7 +81,7 @@ namespace MyImageBoard.Pages.ThreadPages
             _context.Treads.Add(thread);
             await _context.SaveChangesAsync();
 
-            TempData["Message"] = "Thread created successfully!";
+            // Убираем TempData["Message"]
             return RedirectToPage("./Threads");
         }
     }

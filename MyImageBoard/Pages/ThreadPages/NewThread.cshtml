@@ -8,12 +8,13 @@
 
 <form method="post" enctype="multipart/form-data">
     <div class="form-group">
-        <label for="title">Title:</label>
-        <input type="text" id="title" name="Thread.Title" class="form-control" />
+        <label asp-for="ThreadInput.Title">Title:</label>
+        <input asp-for="ThreadInput.Title" class="form-control" />
+        <span asp-validation-for="ThreadInput.Title" class="text-danger"></span>
     </div>
     <div class="form-group">
-        <label for="text">Text:</label>
-        <textarea id="text" name="Thread.Text" class="form-control" rows="5"></textarea>
+        <label asp-for="ThreadInput.Text">Text:</label>
+        <textarea asp-for="ThreadInput.Text" class="form-control" rows="5"></textarea>
     </div>
     <div class="form-group">
         <label for="image">Image:</label>
@@ -22,10 +23,10 @@
     <button type="submit" class="btn btn-primary">Create Thread</button>
 </form>
 
-@if (!string.IsNullOrEmpty(Model.Message))
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
 {
-    <div class="alert alert-success" style="margin-top: 20px;">
-        @Model.Message
+    <div class="alert alert-danger" style="margin-top: 20px;">
+        @Model.ErrorMessage
     </div>
 }
 
@@ -42,4 +43,13 @@
     .btn {
         margin-top: 10px;
     }
+
+    .text-danger {
+        display: block;
+        font-size: 0.875em;
+    }
 </style>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -55,15 +55,16 @@ namespace MyImageBoard.Pages.ThreadPages
                 return NotFound();
             }
 
-            // Проверка: нужен либо текст, либо изображение
-            if (string.IsNullOrEmpty(CommentText) && (CommentImage == null || CommentImage.Length == 0))
+            // Проверка: текст обязателен
+            if (string.IsNullOrEmpty(CommentText))
             {
-                TempData["ErrorMessage"] = "Comment must have either text or an image.";
+                TempData["ErrorMessage"] = "Comment text is required.";
                 return RedirectToPage("./Thread", new { id });
             }
 
             var comment = new Comment { Text = CommentText };
 
+            // Изображение опционально
             if (CommentImage != null && CommentImage.Length > 0)
             {
                 var uploadsFolder = Path.Combine(_environment.WebRootPath, "images");
