@@ -1,0 +1,35 @@
+﻿@page "{boardId:int}"
+@model NewImageBoard.Pages.CreateThreadModel
+@{
+    ViewData["Title"] = $"Create Thread on {Model.Board?.Name}";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-4">
+    <h1 class="mb-4">Create Thread on /@Model.Board?.ShortName/ - @Model.Board?.Name</h1>
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger">@Model.ErrorMessage</div>
+    }
+
+    <form method="post" enctype="multipart/form-data">
+        <div class="mb-3">
+            <label asp-for="NewThreadInput.Title" class="form-label">Thread Title</label>
+            <input asp-for="NewThreadInput.Title" class="form-control" required />
+            <span asp-validation-for="NewThreadInput.Title" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="NewThreadInput.Message" class="form-label">Message</label>
+            <textarea asp-for="NewThreadInput.Message" class="form-control" rows="5" required></textarea>
+            <span asp-validation-for="NewThreadInput.Message" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="NewThreadInput.Image" class="form-label">Image (optional)</label>
+            <input asp-for="NewThreadInput.Image" type="file" class="form-control" accept="image/*" />
+            <span asp-validation-for="NewThreadInput.Image" class="text-danger"></span>
+        </div>
+        <button type="submit" class="btn btn-primary">Create Thread</button>
+        <a href="/ThreadsView/@Model.Board?.BoardId" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>

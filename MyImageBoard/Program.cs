@@ -1,34 +1,46 @@
 using Microsoft.EntityFrameworkCore;
-using MyImageBoard;
+using NewImageBoard.Models;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Добавление сервисов Razor Pages
 builder.Services.AddRazorPages();
 
-builder.Services.AddDbContext<MyImageBoardContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+// Регистрация DbContext
+builder.Services.AddDbContext<ImageBoardContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("ImageBoardContext")));
+
+// Настройка аутентификации
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Login";
+        options.AccessDeniedPath = "/Error";
+    });
+
+// Настройка авторизации
+builder.Services.AddAuthorization();
+
+//// Добавление IWebHostEnvironment для работы с файлами
+//builder.Services.AddSingleton<IWebHostEnvironment>(sp => sp.GetRequiredService<IWebHostEnvironment>());
 
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
-}
-
+// Настройка middleware
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
-app.UseStaticFiles(); // Должно быть
-
 app.UseRouting();
-
+app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapRazorPages();
+
+// Redirect root to BoardsView
+app.MapGet("/", async context =>
+{
+    context.Response.Redirect("/BoardsView");
+    await Task.CompletedTask;
+});
 
 app.Run();

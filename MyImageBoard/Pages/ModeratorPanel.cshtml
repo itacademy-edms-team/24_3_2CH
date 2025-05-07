@@ -1,0 +1,131 @@
+﻿@page
+@model NewImageBoard.Pages.ModeratorPanelModel
+@{
+    ViewData["Title"] = "Панель модерации";
+}
+
+<div class="container mt-4">
+    <h1 class="mb-4">Панель модерации</h1>
+
+    <h3>Фильтр тредов</h3>
+    <form method="get" class="row g-3 mb-4">
+        <div class="col-md-4">
+            <label asp-for="ThreadSearchText" class="form-label">Поиск по тексту</label>
+            <input asp-for="ThreadSearchText" class="form-control" />
+        </div>
+        <div class="col-md-2">
+            <label asp-for="ThreadIsReported" class="form-label">Только с жалобами</label>
+            <input asp-for="ThreadIsReported" type="checkbox" class="form-check-input" />
+        </div>
+        <div class="col-md-2 align-self-end">
+            <button type="submit" class="btn btn-primary">Поиск</button>
+        </div>
+    </form>
+
+    @if (Model.ForumThreads.Any())
+    {
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>ID треда</th>
+                    <th>Доска</th>
+                    <th>Заголовок</th>
+                    <th>Сообщение</th>
+                    <th>Создан</th>
+                    <th>Статус</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var thread in Model.ForumThreads)
+                {
+                    <tr>
+                        <td>@thread.ThreadId</td>
+                        <td>/@thread.Board?.ShortName/</td>
+                        <td><a href="/ThreadView/@thread.BoardId/@thread.ThreadId">@thread.Title</a></td>
+                        <td>@(thread.Message.Length > 50 ? thread.Message.Substring(0, 50) + "..." : thread.Message)</td>
+                        <td>@thread.CreatedAt.ToString("MMM dd, yyyy HH:mm")</td>
+                        <td>@(thread.IsReported ? "Жалоба" : "Нормальный")</td>
+                        <td>
+                            <form method="post" asp-page-handler="ClearReportThread" class="d-inline">
+                                <input type="hidden" name="threadId" value="@thread.ThreadId" />
+                                <button type="submit" class="btn btn-sm btn-success">Снять жалобу</button>
+                            </form>
+                            <form method="post" asp-page-handler="DeleteThread" class="d-inline">
+                                <input type="hidden" name="threadId" value="@thread.ThreadId" />
+                                <button type="submit" class="btn btn-sm btn-danger">Удалить</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <p>Треды не найдены.</p>
+    }
+
+    <h3 class="mt-4">Фильтр постов в треде</h3>
+    <form method="get" class="row g-3 mb-4">
+        <div class="col-md-2">
+            <label asp-for="PostThreadId" class="form-label">ID треда</label>
+            <input asp-for="PostThreadId" class="form-control" />
+        </div>
+        <div class="col-md-4">
+            <label asp-for="PostSearchText" class="form-label">Поиск по тексту</label>
+            <input asp-for="PostSearchText" class="form-control" />
+        </div>
+        <div class="col-md-2">
+            <label asp-for="PostIsReported" class="form-label">Только с жалобами</label>
+            <input asp-for="PostIsReported" type="checkbox" class="form-check-input" />
+        </div>
+        <div class="col-md-2 align-self-end">
+            <button type="submit" class="btn btn-primary">Поиск</button>
+        </div>
+    </form>
+
+    @if (Model.Posts.Any())
+    {
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Доска</th>
+                    <th>Тред</th>
+                    <th>Пост ID</th>
+                    <th>Сообщение</th>
+                    <th>Создан</th>
+                    <th>Статус</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var post in Model.Posts)
+                {
+                    <tr>
+                        <td>/@post.Thread?.Board?.ShortName/</td>
+                        <td><a href="/ThreadView/@post.Thread?.BoardId/@post.ThreadId">@post.Thread?.Title</a></td>
+                        <td>#@post.PostId</td>
+                        <td>@(post.Message.Length > 50 ? post.Message.Substring(0, 50) + "..." : post.Message)</td>
+                        <td>@post.CreatedAt.ToString("MMM dd, yyyy HH:mm")</td>
+                        <td>@(post.IsReported ? "Жалоба" : "Нормальный")</td>
+                        <td>
+                            <form method="post" asp-page-handler="ClearReportPost" class="d-inline">
+                                <input type="hidden" name="postId" value="@post.PostId" />
+                                <button type="submit" class="btn btn-sm btn-success">Снять жалобу</button>
+                            </form>
+                            <form method="post" asp-page-handler="DeletePost" class="d-inline">
+                                <input type="hidden" name="postId" value="@post.PostId" />
+                                <button type="submit" class="btn btn-sm btn-danger">Удалить</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <p>Посты не найдены.</p>
+    }
+</div>

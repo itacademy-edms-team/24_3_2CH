@@ -1,0 +1,35 @@
+﻿@page
+@model NewImageBoard.Pages.BoardsViewModel
+@{
+    ViewData["Title"] = "Boards";
+}
+
+<div class="container mt-4">
+    <h1 class="text-center mb-4">Boards</h1>
+
+    @if (!Model.Boards.Any())
+    {
+        <p>No boards available.</p>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var board in Model.Boards)
+            {
+                <div class="col-md-4 mb-3">
+                    <a href="/ThreadsView/@board.BoardId" class="text-decoration-none">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">@board.Name (@board.ShortName)</h5>
+                                <p class="card-text">@board.Description</p>
+                            </div>
+                            <div class="card-footer text-muted">
+                                Created: @board.CreatedAt.ToString("MMM dd, yyyy")
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            }
+        </div>
+    }
+</div>

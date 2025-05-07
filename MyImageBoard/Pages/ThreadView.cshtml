@@ -1,0 +1,157 @@
+﻿@page "{boardId:int}/{threadId:int}"
+@model NewImageBoard.Pages.ThreadViewModel
+@{
+    ViewData["Title"] = $"Тред: {Model.Thread?.Title}";
+}
+
+<div class="container mt-4">
+    <h1 class="mb-4">/@Model.Board?.ShortName/ - @Model.Board?.Name</h1>
+
+    <div class="mb-3">
+        <a href="/ThreadsView/@Model.Board?.BoardId" class="btn btn-secondary">Назад к тредам</a>
+    </div>
+
+    @if (Model.Thread == null)
+    {
+        <p class="text-danger">Тред не найден.</p>
+    }
+    else
+    {
+        <!-- OP-пост -->
+        <div class="border-bottom mb-3 pb-3">
+            <div class="d-flex justify-content-between">
+                <h5 class="mb-1">@Model.Thread.Title</h5>
+                <div>
+                    <small class="text-muted">@Model.Thread.CreatedAt.ToString("MMM dd, yyyy HH:mm") | Автор: @(Model.Thread.CreatedByNavigation != null && Model.Thread.CreatedBy != null ? Model.Thread.CreatedByNavigation.Username : "Аноним")</small>
+                    @if (!Model.Thread.IsReported)
+                    {
+                        @if (User.Identity.IsAuthenticated)
+                        {
+                            <a href="/ModeratorPanel?threadId=@Model.Thread.ThreadId" class="btn btn-sm btn-warning ms-2">Модерировать</a>
+                        }
+                        else
+                        {
+                            <form method="post" asp-page-handler="ReportThread" class="d-inline">
+                                <input type="hidden" name="threadId" value="@Model.Thread.ThreadId" />
+                                <button type="submit" class="btn btn-sm btn-danger ms-2">Пожаловаться</button>
+                            </form>
+                        }
+                    }
+                    else
+                    {
+                        <span class="badge bg-danger ms-2">Жалоба</span>
+                    }
+                </div>
+            </div>
+            <div class="d-flex">
+                @if (!string.IsNullOrEmpty(Model.Thread.ImagePath))
+                {
+                    <div class="me-3">
+                        <img src="@Model.Thread.ImagePath"
+                             alt="Изображение треда"
+                             style="max-width: 150px; max-height: 150px; cursor: pointer;"
+                             class="img-thumbnail"
+                             data-bs-toggle="modal"
+                             data-bs-target="#imageModal"
+                             onclick="document.getElementById('modalImage').src = '@Model.Thread.ImagePath'">
+                    </div>
+                }
+                <div>
+                    <p>@Model.Thread.Message</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Посты -->
+        @if (!Model.Posts.Any())
+        {
+            <p>Пока нет ответов.</p>
+        }
+        else
+        {
+            @foreach (var post in Model.Posts)
+            {
+                <div class="border-bottom mb-3 pb-3">
+                    <div class="d-flex justify-content-between">
+                        <h6 class="mb-1">Ответ #@post.PostId</h6>
+                        <div>
+                            <small class="text-muted">@post.CreatedAt.ToString("MMM dd, yyyy HH:mm") | Автор: @post.CreatedBy</small>
+                            @if (!post.IsReported)
+                            {
+                                @if (User.Identity.IsAuthenticated)
+                                {
+                                    <a href="/ModeratorPanel?postId=@post.PostId" class="btn btn-sm btn-warning ms-2">Модерировать</a>
+                                }
+                                else
+                                {
+                                    <form method="post" asp-page-handler="ReportPost" class="d-inline">
+                                        <input type="hidden" name="postId" value="@post.PostId" />
+                                        <button type="submit" class="btn btn-sm btn-danger ms-2">Пожаловаться</button>
+                                    </form>
+                                }
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger ms-2">Жалоба</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="d-flex">
+                        @if (!string.IsNullOrEmpty(post.ImagePath))
+                        {
+                            <div class="me-3">
+                                <img src="@post.ImagePath"
+                                     alt="Изображение поста"
+                                     style="max-width: 150px; max-height: 150px; cursor: pointer;"
+                                     class="img-thumbnail"
+                                     data-bs-toggle="modal"
+                                     data-bs-target="#imageModal"
+                                     onclick="document.getElementById('modalImage').src = '@post.ImagePath'">
+                            </div>
+                        }
+                        <div>
+                            <p>@post.Message</p>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+
+        <!-- Форма для нового поста -->
+        <h3 class="mt-4 mb-3">Ответить в тред</h3>
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger">@Model.ErrorMessage</div>
+        }
+        <form method="post" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label asp-for="NewPostInput.Message" class="form-label">Сообщение</label>
+                <textarea asp-for="NewPostInput.Message" class="form-control" rows="5" required></textarea>
+                <span asp-validation-for="NewPostInput.Message" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="NewPostInput.Image" class="form-label">Изображение (опционально)</label>
+                <input asp-for="NewPostInput.Image" type="file" class="form-control" accept="image/*" />
+                <span asp-validation-for="NewPostInput.Image" class="text-danger"></span>
+            </div>
+            <button type="submit" class="btn btn-primary">Отправить</button>
+        </form>
+    }
+</div>
+
+<!-- Modal для изображений -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true" style="background-color: rgba(0,0,0,0.9);">
+    <div class="modal-dialog modal-dialog-centered m-0" style="max-width: none; width: auto;">
+        <div class="modal-content border-0 bg-transparent">
+            <div class="modal-header border-0 p-1" style="position: absolute; top: 0; right: 0; z-index: 1;">
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0 d-flex justify-content-center align-items-center" style="height: 100vh;">
+                <img id="modalImage" src=""
+                     class="img-fluid"
+                     style="object-fit: contain; max-height: 100vh; max-width: 100vw;"
+                     alt="Полноразмерное изображение">
+            </div>
+        </div>
+    </div>
+</div>
