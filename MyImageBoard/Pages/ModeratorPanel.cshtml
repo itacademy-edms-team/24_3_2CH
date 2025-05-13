@@ -7,15 +7,31 @@
 <div class="container mt-4">
     <h1 class="mb-4">Панель модерации</h1>
 
+    <!-- Фильтр тредов -->
     <h3>Фильтр тредов</h3>
     <form method="get" class="row g-3 mb-4">
         <div class="col-md-4">
             <label asp-for="ThreadSearchText" class="form-label">Поиск по тексту</label>
-            <input asp-for="ThreadSearchText" class="form-control" />
+            <input asp-for="ThreadSearchText" class="form-control" placeholder="Заголовок или сообщение" />
         </div>
         <div class="col-md-2">
             <label asp-for="ThreadIsReported" class="form-label">Только с жалобами</label>
             <input asp-for="ThreadIsReported" type="checkbox" class="form-check-input" />
+        </div>
+        <div class="col-md-2">
+            <label asp-for="ThreadBoardId" class="form-label">Доска</label>
+            <select asp-for="ThreadBoardId" class="form-select" asp-items="@(new SelectList(Model.Boards, "BoardId", "ShortName"))">
+                <option value="">Все</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label asp-for="ThreadSortOrder" class="form-label">Сортировка</label>
+            <select asp-for="ThreadSortOrder" class="form-select">
+                <option value="CreatedAtDesc">Новые сначала</option>
+                <option value="CreatedAtAsc">Старые сначала</option>
+                <option value="TitleAsc">По заголовку (А-Я)</option>
+                <option value="TitleDesc">По заголовку (Я-А)</option>
+            </select>
         </div>
         <div class="col-md-2 align-self-end">
             <button type="submit" class="btn btn-primary">Поиск</button>
@@ -66,7 +82,8 @@
         <p>Треды не найдены.</p>
     }
 
-    <h3 class="mt-4">Фильтр постов в треде</h3>
+    <!-- Фильтр постов -->
+    <h3 class="mt-4">Фильтр постов</h3>
     <form method="get" class="row g-3 mb-4">
         <div class="col-md-2">
             <label asp-for="PostThreadId" class="form-label">ID треда</label>
@@ -74,11 +91,24 @@
         </div>
         <div class="col-md-4">
             <label asp-for="PostSearchText" class="form-label">Поиск по тексту</label>
-            <input asp-for="PostSearchText" class="form-control" />
+            <input asp-for="PostSearchText" class="form-control" placeholder="Сообщение" />
         </div>
         <div class="col-md-2">
             <label asp-for="PostIsReported" class="form-label">Только с жалобами</label>
             <input asp-for="PostIsReported" type="checkbox" class="form-check-input" />
+        </div>
+        <div class="col-md-2">
+            <label asp-for="PostBoardId" class="form-label">Доска</label>
+            <select asp-for="PostBoardId" class="form-select" asp-items="@(new SelectList(Model.Boards, "BoardId", "ShortName"))">
+                <option value="">Все</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <<label asp-for="PostSortOrder" class="form-label">Сортировка</label>
+            <select asp-for="PostSortOrder" class="form-select">
+                <option value="CreatedAtDesc">Новые сначала</option>
+                <option value="CreatedAtAsc">Старые сначала</option>
+            </select>
         </div>
         <div class="col-md-2 align-self-end">
             <button type="submit" class="btn btn-primary">Поиск</button>
@@ -111,7 +141,7 @@
                         <td>@(post.IsReported ? "Жалоба" : "Нормальный")</td>
                         <td>
                             <form method="post" asp-page-handler="ClearReportPost" class="d-inline">
-                                <input type="hidden" name="postId" value="@post.PostId" />
+                                <input type="hidden" name="postId Ascending PostId" value="@post.PostId" />
                                 <button type="submit" class="btn btn-sm btn-success">Снять жалобу</button>
                             </form>
                             <form method="post" asp-page-handler="DeletePost" class="d-inline">

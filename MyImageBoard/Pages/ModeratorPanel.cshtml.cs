@@ -26,6 +26,12 @@ namespace NewImageBoard.Pages
         public bool ThreadIsReported { get; set; }
 
         [BindProperty(SupportsGet = true)]
+        public int? ThreadBoardId { get; set; }
+
+        [BindProperty(SupportsGet = true)]
+        public string ThreadSortOrder { get; set; } = "CreatedAtDesc";
+
+        [BindProperty(SupportsGet = true)]
         public int? PostThreadId { get; set; }
 
         [BindProperty(SupportsGet = true)]
@@ -35,21 +41,30 @@ namespace NewImageBoard.Pages
         public bool PostIsReported { get; set; }
 
         [BindProperty(SupportsGet = true)]
+        public int? PostBoardId { get; set; }
+
+        [BindProperty(SupportsGet = true)]
+        public string PostSortOrder { get; set; } = "CreatedAtDesc";
+
+        [BindProperty(SupportsGet = true)]
         public int? ThreadId { get; set; }
 
         [BindProperty(SupportsGet = true)]
         public int? PostId { get; set; }
 
         public IList<ForumThread> ForumThreads { get; set; } = new List<ForumThread>();
-
         public IList<Post> Posts { get; set; } = new List<Post>();
+        public IList<Board> Boards { get; set; } = new List<Board>();
 
         public async Task<IActionResult> OnGetAsync()
         {
+            // Загрузка списка досок
+            Boards = await _context.Boards.OrderBy(b => b.ShortName).ToListAsync();
+
             // Фильтрация тредов
             var threadsQuery = _context.Threads
-            .Include(t => t.Board)
-            .AsQueryable();
+                .Include(t => t.Board)
+                .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(ThreadSearchText))
             {
@@ -61,18 +76,32 @@ namespace NewImageBoard.Pages
                 threadsQuery = threadsQuery.Where(t => t.IsReported);
             }
 
+            if (ThreadBoardId.HasValue)
+            {
+                threadsQuery = threadsQuery.Where(t => t.BoardId == ThreadBoardId.Value);
+            }
+
             if (ThreadId.HasValue)
             {
                 threadsQuery = threadsQuery.Where(t => t.ThreadId == ThreadId.Value);
             }
 
-            ForumThreads = await threadsQuery.OrderByDescending(t => t.CreatedAt).ToListAsync();
+            // Сортировка тредов
+            threadsQuery = ThreadSortOrder switch
+            {
+                "CreatedAtAsc" => threadsQuery.OrderBy(t => t.CreatedAt),
+                "TitleAsc" => threadsQuery.OrderBy(t => t.Title),
+                "TitleDesc" => threadsQuery.OrderByDescending(t => t.Title),
+                _ => threadsQuery.OrderByDescending(t => t.CreatedAt),
+            };
+
+            ForumThreads = await threadsQuery.ToListAsync();
 
             // Фильтрация постов
             var postsQuery = _context.Posts
-            .Include(p => p.Thread)
-            .ThenInclude(t => t.Board)
-            .AsQueryable();
+                .Include(p => p.Thread)
+                .ThenInclude(t => t.Board)
+                .AsQueryable();
 
             if (PostThreadId.HasValue)
             {
@@ -89,12 +118,24 @@ namespace NewImageBoard.Pages
                 postsQuery = postsQuery.Where(p => p.IsReported);
             }
 
+            if (PostBoardId.HasValue)
+            {
+                postsQuery = postsQuery.Where(p => p.Thread.BoardId == PostBoardId.Value);
+            }
+
             if (PostId.HasValue)
             {
                 postsQuery = postsQuery.Where(p => p.PostId == PostId.Value);
             }
 
-            Posts = await postsQuery.OrderByDescending(p => p.CreatedAt).ToListAsync();
+            // Сортировка постов
+            postsQuery = PostSortOrder switch
+            {
+                "CreatedAtAsc" => postsQuery.OrderBy(p => p.CreatedAt),
+                _ => postsQuery.OrderByDescending(p => p.CreatedAt),
+            };
+
+            Posts = await postsQuery.ToListAsync();
 
             return Page();
         }
@@ -110,7 +151,7 @@ namespace NewImageBoard.Pages
             thread.IsReported = false;
             await _context.SaveChangesAsync();
 
-            return RedirectToPage("/ModeratorPanel", new { ThreadSearchText, ThreadIsReported, PostThreadId, PostSearchText, PostIsReported });
+            return RedirectToPage("/ModeratorPanel", new { ThreadSearchText, ThreadIsReported, ThreadBoardId, ThreadSortOrder, PostThreadId, PostSearchText, PostIsReported, PostBoardId, PostSortOrder });
         }
 
         public async Task<IActionResult> OnPostClearReportPostAsync(int postId)
@@ -124,7 +165,7 @@ namespace NewImageBoard.Pages
             post.IsReported = false;
             await _context.SaveChangesAsync();
 
-            return RedirectToPage("/ModeratorPanel", new { ThreadSearchText, ThreadIsReported, PostThreadId, PostSearchText, PostIsReported });
+            return RedirectToPage("/ModeratorPanel", new { ThreadSearchText, ThreadIsReported, ThreadBoardId, ThreadSortOrder, PostThreadId, PostSearchText, PostIsReported, PostBoardId, PostSortOrder });
         }
 
         public async Task<IActionResult> OnPostDeleteThreadAsync(int threadId)
@@ -138,7 +179,7 @@ namespace NewImageBoard.Pages
             _context.Threads.Remove(thread);
             await _context.SaveChangesAsync();
 
-            return RedirectToPage("/ModeratorPanel", new { ThreadSearchText, ThreadIsReported, PostThreadId, PostSearchText, PostIsReported });
+            return RedirectToPage("/ModeratorPanel", new { ThreadSearchText, ThreadIsReported, ThreadBoardId, ThreadSortOrder, PostThreadId, PostSearchText, PostIsReported, PostBoardId, PostSortOrder });
         }
 
         public async Task<IActionResult> OnPostDeletePostAsync(int postId)
@@ -152,7 +193,7 @@ namespace NewImageBoard.Pages
             _context.Posts.Remove(post);
             await _context.SaveChangesAsync();
 
-            return RedirectToPage("/ModeratorPanel", new { ThreadSearchText, ThreadIsReported, PostThreadId, PostSearchText, PostIsReported });
+            return RedirectToPage("/ModeratorPanel", new { ThreadSearchText, ThreadIsReported, ThreadBoardId, ThreadSortOrder, PostThreadId, PostSearchText, PostIsReported, PostBoardId, PostSortOrder });
         }
     }
 }
