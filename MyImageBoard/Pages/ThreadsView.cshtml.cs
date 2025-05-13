@@ -30,6 +30,7 @@ namespace NewImageBoard.Pages
             public DateTime CreatedAt { get; set; }
             public string CreatedBy { get; set; }
             public int ReplyCount { get; set; }
+            public bool IsReported { get; set; } // Поле для статуса жалобы
         }
 
         public async Task<IActionResult> OnGetAsync(int boardId)
@@ -43,7 +44,7 @@ namespace NewImageBoard.Pages
             Threads = await _context.Threads
                 .Where(t => t.BoardId == boardId)
                 .Include(t => t.CreatedByNavigation)
-                .Include(t => t.Posts) // Подключаем посты (ответы) для подсчёта
+                .Include(t => t.Posts)
                 .Select(t => new ThreadViewModel
                 {
                     ThreadId = t.ThreadId,
@@ -52,12 +53,27 @@ namespace NewImageBoard.Pages
                     ImagePath = t.ImagePath,
                     CreatedAt = t.CreatedAt,
                     CreatedBy = t.CreatedByNavigation != null ? t.CreatedByNavigation.Username : "Anonymous",
-                    ReplyCount = t.Posts.Count // Считаем количество постов (ответов)
+                    ReplyCount = t.Posts.Count,
+                    IsReported = t.IsReported // Включаем статус жалобы
                 })
                 .OrderByDescending(t => t.CreatedAt)
                 .ToListAsync();
 
             return Page();
+        }
+
+        public async Task<IActionResult> OnPostReportThreadAsync(int boardId, int threadId)
+        {
+            var thread = await _context.Threads.FirstOrDefaultAsync(t => t.ThreadId == threadId && t.BoardId == boardId);
+            if (thread == null)
+            {
+                return NotFound();
+            }
+
+            thread.IsReported = true;
+            await _context.SaveChangesAsync();
+
+            return RedirectToPage("/ThreadsView", new { boardId });
         }
     }
 }

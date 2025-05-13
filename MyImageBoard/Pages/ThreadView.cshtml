@@ -23,23 +23,20 @@
                 <h5 class="mb-1">@Model.Thread.Title</h5>
                 <div>
                     <small class="text-muted">@Model.Thread.CreatedAt.ToString("MMM dd, yyyy HH:mm") | Автор: @(Model.Thread.CreatedByNavigation != null && Model.Thread.CreatedBy != null ? Model.Thread.CreatedByNavigation.Username : "Аноним")</small>
-                    @if (!Model.Thread.IsReported)
-                    {
-                        @if (User.Identity.IsAuthenticated)
-                        {
-                            <a href="/ModeratorPanel?threadId=@Model.Thread.ThreadId" class="btn btn-sm btn-warning ms-2">Модерировать</a>
-                        }
-                        else
-                        {
-                            <form method="post" asp-page-handler="ReportThread" class="d-inline">
-                                <input type="hidden" name="threadId" value="@Model.Thread.ThreadId" />
-                                <button type="submit" class="btn btn-sm btn-danger ms-2">Пожаловаться</button>
-                            </form>
-                        }
-                    }
-                    else
+                    @if (Model.Thread.IsReported)
                     {
                         <span class="badge bg-danger ms-2">Жалоба</span>
+                    }
+                    @if (User.Identity.IsAuthenticated)
+                    {
+                        <a href="/ModeratorPanel?threadId=@Model.Thread.ThreadId" class="btn btn-sm btn-warning ms-2">Модерировать</a>
+                    }
+                    else if (!Model.Thread.IsReported)
+                    {
+                        <form method="post" asp-page-handler="ReportThread" class="d-inline">
+                            <input type="hidden" name="threadId" value="@Model.Thread.ThreadId" />
+                            <button type="submit" class="btn btn-sm btn-danger ms-2">Пожаловаться</button>
+                        </form>
                     }
                 </div>
             </div>
@@ -76,23 +73,20 @@
                         <h6 class="mb-1">Ответ #@post.PostId</h6>
                         <div>
                             <small class="text-muted">@post.CreatedAt.ToString("MMM dd, yyyy HH:mm") | Автор: @post.CreatedBy</small>
-                            @if (!post.IsReported)
-                            {
-                                @if (User.Identity.IsAuthenticated)
-                                {
-                                    <a href="/ModeratorPanel?postId=@post.PostId" class="btn btn-sm btn-warning ms-2">Модерировать</a>
-                                }
-                                else
-                                {
-                                    <form method="post" asp-page-handler="ReportPost" class="d-inline">
-                                        <input type="hidden" name="postId" value="@post.PostId" />
-                                        <button type="submit" class="btn btn-sm btn-danger ms-2">Пожаловаться</button>
-                                    </form>
-                                }
-                            }
-                            else
+                            @if (post.IsReported)
                             {
                                 <span class="badge bg-danger ms-2">Жалоба</span>
+                            }
+                            @if (User.Identity.IsAuthenticated)
+                            {
+                                <a href="/ModeratorPanel?postId=@post.PostId" class="btn btn-sm btn-warning ms-2">Модерировать</a>
+                            }
+                            else if (!post.IsReported)
+                            {
+                                <form method="post" asp-page-handler="ReportPost" class="d-inline">
+                                    <input type="hidden" name="postId" value="@post.PostId" />
+                                    <button type="submit" class="btn btn-sm btn-danger ms-2">Пожаловаться</button>
+                                </form>
                             }
                         </div>
                     </div>

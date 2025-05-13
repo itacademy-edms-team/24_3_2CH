@@ -27,7 +27,24 @@
             <div class="border-bottom mb-3 pb-3">
                 <div class="d-flex justify-content-between">
                     <h5 class="mb-1"><a href="/ThreadView/@Model.Board?.BoardId/@thread.ThreadId" class="text-dark text-decoration-none">@thread.Title</a></h5>
-                    <small class="text-muted">@thread.CreatedAt.ToString("MMM dd, yyyy HH:mm") | Replies: @thread.ReplyCount | By: @thread.CreatedBy</small>
+                    <div>
+                        <small class="text-muted">@thread.CreatedAt.ToString("MMM dd, yyyy HH:mm") | Replies: @thread.ReplyCount | By: @thread.CreatedBy</small>
+                        @if (thread.IsReported)
+                        {
+                            <span class="badge bg-danger ms-2">Жалоба</span>
+                        }
+                        @if (User.Identity.IsAuthenticated)
+                        {
+                            <a href="/ModeratorPanel?threadId=@thread.ThreadId" class="btn btn-sm btn-warning ms-2">Модерировать</a>
+                        }
+                        else if (!thread.IsReported)
+                        {
+                            <form method="post" asp-page-handler="ReportThread" class="d-inline">
+                                <input type="hidden" name="threadId" value="@thread.ThreadId" />
+                                <button type="submit" class="btn btn-sm btn-danger ms-2">Пожаловаться</button>
+                            </form>
+                        }
+                    </div>
                 </div>
                 <div class="d-flex">
                     @if (!string.IsNullOrEmpty(thread.ImagePath))
