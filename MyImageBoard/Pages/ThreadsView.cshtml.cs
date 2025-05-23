@@ -1,25 +1,38 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using NewImageBoard.Models;
-using Microsoft.EntityFrameworkCore;
+using MyImageBoard.Models;
+using MyImageBoard.Services.Interfaces;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Linq;
 
-namespace NewImageBoard.Pages
+namespace MyImageBoard.Pages
 {
     public class ThreadsViewModel : PageModel
     {
-        private readonly ImageBoardContext _context;
+        private readonly IThreadService _threadService;
+        private readonly IBoardService _boardService;
+        private readonly IUserService _userService;
+        private readonly IModerationService _moderationService;
 
-        public ThreadsViewModel(ImageBoardContext context)
+        public ThreadsViewModel(
+            IThreadService threadService,
+            IBoardService boardService,
+            IUserService userService,
+            IModerationService moderationService)
         {
-            _context = context;
+            _threadService = threadService;
+            _boardService = boardService;
+            _userService = userService;
+            _moderationService = moderationService;
         }
 
         public Board Board { get; set; }
-
         public IList<ThreadViewModel> Threads { get; set; } = new List<ThreadViewModel>();
+        public bool IsModerator { get; set; }
+        public int CurrentPage { get; set; } = 1;
+        public int PageSize { get; set; } = 10;
+        public int TotalPages { get; set; }
 
         public class ThreadViewModel
         {
@@ -30,50 +43,62 @@ namespace NewImageBoard.Pages
             public DateTime CreatedAt { get; set; }
             public string CreatedBy { get; set; }
             public int ReplyCount { get; set; }
-            public bool IsReported { get; set; } // Поле для статуса жалобы
+            public bool IsReported { get; set; }
         }
 
-        public async Task<IActionResult> OnGetAsync(int boardId)
+        public async Task<IActionResult> OnGetAsync(int boardId, int page = 1)
         {
-            Board = await _context.Boards.FirstOrDefaultAsync(b => b.BoardId == boardId);
-            if (Board == null)
+            try
             {
-                return NotFound();
-            }
+                Board = await _boardService.GetBoardByIdAsync(boardId);
+                if (Board == null)
+                {
+                    return NotFound();
+                }
 
-            Threads = await _context.Threads
-                .Where(t => t.BoardId == boardId)
-                .Include(t => t.CreatedByNavigation)
-                .Include(t => t.Posts)
-                .Select(t => new ThreadViewModel
+                CurrentPage = page;
+                var userId = User.Identity?.IsAuthenticated == true ? 
+                    int.Parse(User.FindFirst("UserId")?.Value ?? "0") : 0;
+
+                IsModerator = userId > 0 && await _userService.HasPermissionAsync(userId, "ModerateThread");
+
+                var threads = await _threadService.GetThreadsByBoardAsync(boardId, page, PageSize);
+                var totalPosts = await _threadService.GetThreadPostsCountAsync(boardId);
+                TotalPages = (int)Math.Ceiling(totalPosts / (double)PageSize);
+
+                Threads = threads.Select(t => new ThreadViewModel
                 {
                     ThreadId = t.ThreadId,
                     Title = t.Title,
                     Message = t.Message,
                     ImagePath = t.ImagePath,
                     CreatedAt = t.CreatedAt,
-                    CreatedBy = t.CreatedByNavigation != null ? t.CreatedByNavigation.Username : "Anonymous",
-                    ReplyCount = t.Posts.Count,
-                    IsReported = t.IsReported // Включаем статус жалобы
-                })
-                .OrderByDescending(t => t.CreatedAt)
-                .ToListAsync();
+                    CreatedBy = t.CreatedByNavigation?.Username ?? "Anonymous",
+                    ReplyCount = t.Posts?.Count ?? 0,
+                    IsReported = t.IsReported
+                }).ToList();
 
-            return Page();
+                return Page();
+            }
+            catch (Exception ex)
+            {
+                // Р›РѕРіРёСЂРѕРІР°РЅРёРµ РѕС€РёР±РєРё
+                return StatusCode(500, "An error occurred while loading threads");
+            }
         }
 
-        public async Task<IActionResult> OnPostReportThreadAsync(int boardId, int threadId)
+        public async Task<IActionResult> OnPostReportThreadAsync(int threadId)
         {
-            var thread = await _context.Threads.FirstOrDefaultAsync(t => t.ThreadId == threadId && t.BoardId == boardId);
-            if (thread == null)
+            try
             {
-                return NotFound();
+                await _moderationService.ReportThreadAsync(threadId);
+                return RedirectToPage();
             }
-
-            thread.IsReported = true;
-            await _context.SaveChangesAsync();
-
-            return RedirectToPage("/ThreadsView", new { boardId });
+            catch (Exception ex)
+            {
+                // Р›РѕРіРёСЂРѕРІР°РЅРёРµ РѕС€РёР±РєРё
+                return StatusCode(500, "An error occurred while reporting the thread");
+            }
         }
     }
 }

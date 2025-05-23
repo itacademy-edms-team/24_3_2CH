@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace NewImageBoard.Models;
+namespace MyImageBoard.Models;
 
 public partial class Permission
 {

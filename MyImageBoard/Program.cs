@@ -1,17 +1,26 @@
 using Microsoft.EntityFrameworkCore;
-using NewImageBoard.Models;
+using MyImageBoard.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using MyImageBoard.Services;
+using MyImageBoard.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Добавление сервисов Razor Pages
+// Р”РѕР±Р°РІР»СЏРµРј СЃРµСЂРІРёСЃС‹ Razor Pages
 builder.Services.AddRazorPages();
 
-// Регистрация DbContext
+// Р РµРіРёСЃС‚СЂРёСЂСѓРµРј DbContext
 builder.Services.AddDbContext<ImageBoardContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("ImageBoardContext")));
 
-// Настройка аутентификации
+// Р РµРіРёСЃС‚СЂРёСЂСѓРµРј СЃРµСЂРІРёСЃС‹
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IBoardService, BoardService>();
+builder.Services.AddScoped<IThreadService, ThreadService>();
+builder.Services.AddScoped<IPostService, PostService>();
+builder.Services.AddScoped<IModerationService, ModerationService>();
+
+// РќР°СЃС‚СЂР°РёРІР°РµРј Р°СѓС‚РµРЅС‚РёС„РёРєР°С†РёСЋ
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -19,16 +28,12 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.AccessDeniedPath = "/Error";
     });
 
-// Настройка авторизации
+// РќР°СЃС‚СЂР°РёРІР°РµРј Р°РІС‚РѕСЂРёР·Р°С†РёСЋ
 builder.Services.AddAuthorization();
-
-//// Добавление IWebHostEnvironment для работы с файлами
-//builder.Services.AddSingleton<IWebHostEnvironment>(sp => sp.GetRequiredService<IWebHostEnvironment>());
-
 
 var app = builder.Build();
 
-// Настройка middleware
+// РќР°СЃС‚СЂР°РёРІР°РµРј middleware
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();

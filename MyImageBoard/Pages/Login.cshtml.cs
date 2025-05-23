@@ -1,22 +1,23 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using NewImageBoard.Models;
-using Microsoft.EntityFrameworkCore;
+using MyImageBoard.Models;
+using MyImageBoard.Services.Interfaces;
 using System.Threading.Tasks;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using BCrypt.Net;
 
-namespace NewImageBoard.Pages
+namespace MyImageBoard.Pages
 {
     public class LoginModel : PageModel
     {
-        private readonly ImageBoardContext _context;
+        private readonly IUserService _userService;
+        private readonly ILogger<LoginModel> _logger;
 
-        public LoginModel(ImageBoardContext context)
+        public LoginModel(IUserService userService, ILogger<LoginModel> logger)
         {
-            _context = context;
+            _userService = userService;
+            _logger = logger;
         }
 
         [BindProperty]
@@ -29,31 +30,53 @@ namespace NewImageBoard.Pages
 
         public async Task<IActionResult> OnPostAsync(string returnUrl = null)
         {
-            returnUrl ??= Url.Content("~/");
-
-            var user = await _context.Users
-                .Include(u => u.Group)
-                .FirstOrDefaultAsync(u => u.Username == Username);
-
-            if (user == null || !BCrypt.Net.BCrypt.Verify(Password, user.PasswordHash))
+            try
             {
-                ErrorMessage = "Invalid username or password.";
+                returnUrl ??= Url.Content("~/");
+
+                if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password))
+                {
+                    ErrorMessage = "Username and password are required.";
+                    return Page();
+                }
+
+                if (!await _userService.ValidateUserCredentialsAsync(Username, Password))
+                {
+                    ErrorMessage = "Invalid username or password.";
+                    return Page();
+                }
+
+                var user = await _userService.GetUserByUsernameAsync(Username);
+                var permissions = await _userService.GetUserPermissionsAsync(user.UserId);
+
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.Name, user.Username),
+                    new Claim("UserId", user.UserId.ToString()),
+                    new Claim(ClaimTypes.Role, user.Group?.Name ?? "User")
+                };
+
+                // Добавляем все разрешения пользователя как claims
+                foreach (var permission in permissions)
+                {
+                    claims.Add(new Claim("Permission", permission.Name));
+                }
+
+                var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                var principal = new ClaimsPrincipal(identity);
+
+                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+
+                _logger.LogInformation("User {Username} logged in successfully", Username);
+
+                return LocalRedirect(returnUrl);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during login for user {Username}", Username);
+                ErrorMessage = "An error occurred during login. Please try again.";
                 return Page();
             }
-
-            var claims = new[]
-            {
-                new Claim(ClaimTypes.Name, user.Username),
-                new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
-                new Claim(ClaimTypes.Role, user.Group.Name)
-            };
-
-            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            var principal = new ClaimsPrincipal(identity);
-
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
-
-            return LocalRedirect(returnUrl);
         }
     }
 }

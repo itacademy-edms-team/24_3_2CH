@@ -1,21 +1,33 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using NewImageBoard.Models;
-using Microsoft.EntityFrameworkCore;
+using MyImageBoard.Models;
+using MyImageBoard.Services.Interfaces;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using System.IO;
+using System.Collections.Generic;
 
-namespace NewImageBoard.Pages
+namespace MyImageBoard.Pages
 {
     public class CreateThreadModel : PageModel
     {
-        private readonly ImageBoardContext _context;
+        private readonly IThreadService _threadService;
+        private readonly IBoardService _boardService;
+        private readonly IPostService _postService;
+        private readonly IUserService _userService;
         private readonly IWebHostEnvironment _environment;
 
-        public CreateThreadModel(ImageBoardContext context, IWebHostEnvironment environment)
+        public CreateThreadModel(
+            IThreadService threadService,
+            IBoardService boardService,
+            IPostService postService,
+            IUserService userService,
+            IWebHostEnvironment environment)
         {
-            _context = context;
+            _threadService = threadService;
+            _boardService = boardService;
+            _postService = postService;
+            _userService = userService;
             _environment = environment;
         }
 
@@ -28,93 +40,114 @@ namespace NewImageBoard.Pages
             public string Message { get; set; }
 
             [BindProperty]
-            public IFormFile Image { get; set; } // »ÒÔ‡‚ÎÂÌÓ: Û‰‡ÎÂÌÓ [BindNever]
+            public IFormFile Image { get; set; }
         }
 
         [BindProperty]
         public ThreadInputModel NewThreadInput { get; set; }
 
         public Board Board { get; set; }
-
+        public List<Board> Boards { get; set; } = new List<Board>();
         public string ErrorMessage { get; set; }
 
         public async Task<IActionResult> OnGetAsync(int boardId)
         {
-            Board = await _context.Boards.FirstOrDefaultAsync(b => b.BoardId == boardId);
-            if (Board == null)
+            try
             {
-                return NotFound();
+                Board = await _boardService.GetBoardByIdAsync(boardId);
+                if (Board == null)
+                {
+                    return NotFound();
+                }
+                Boards = (List<Board>)await _boardService.GetAllBoardsAsync();
+                var userId = User.Identity?.IsAuthenticated == true ? 
+                    int.Parse(User.FindFirst("UserId")?.Value ?? "0") : 0;
+                NewThreadInput = new ThreadInputModel();
+                return Page();
             }
-
-            NewThreadInput = new ThreadInputModel();
-            return Page();
+            catch (Exception ex)
+            {
+                // –õ–æ–≥–∏—Ä–æ–≤–∞–Ω–∏–µ –æ—à–∏–±–∫–∏
+                return StatusCode(500, "An error occurred while loading the page");
+            }
         }
 
         public async Task<IActionResult> OnPostAsync(int boardId)
         {
-            Board = await _context.Boards.FirstOrDefaultAsync(b => b.BoardId == boardId);
-            if (Board == null)
+            try
             {
-                return NotFound();
-            }
-
-            // ”‰‡ÎˇÂÏ Image ËÁ ModelState
-            ModelState.Remove("NewThreadInput.Image");
-
-            if (!ModelState.IsValid)
-            {
-                return Page();
-            }
-
-            if (string.IsNullOrWhiteSpace(NewThreadInput.Title) || string.IsNullOrWhiteSpace(NewThreadInput.Message))
-            {
-                ErrorMessage = "Title and message are required.";
-                return Page();
-            }
-
-            var newThread = new ForumThread
-            {
-                BoardId = boardId,
-                Title = NewThreadInput.Title,
-                Message = NewThreadInput.Message,
-                CreatedAt = DateTime.Now
-            };
-
-            // CreatedBy
-            if (User.Identity.IsAuthenticated && User.Identity.Name != null)
-            {
-                var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == User.Identity.Name);
-                newThread.CreatedBy = user?.UserId;
-            }
-            else
-            {
-                newThread.CreatedBy = null;
-            }
-
-            // Œ·‡·ÓÚÍ‡ ËÁÓ·‡ÊÂÌËˇ
-            if (NewThreadInput.Image != null)
-            {
-                var uploadsFolder = Path.Combine(_environment.WebRootPath, "images");
-                if (!Directory.Exists(uploadsFolder))
+                Board = await _boardService.GetBoardByIdAsync(boardId);
+                if (Board == null)
                 {
-                    Directory.CreateDirectory(uploadsFolder);
+                    return NotFound();
                 }
 
-                var uniqueFileName = Guid.NewGuid().ToString() + "_" + NewThreadInput.Image.FileName;
-                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+                var userId = User.Identity?.IsAuthenticated == true ? 
+                    int.Parse(User.FindFirst("UserId")?.Value ?? "0") : 0;
 
-                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                // –£–¥–∞–ª—è–µ–º Image –∏–∑ ModelState
+                ModelState.Remove("NewThreadInput.Image");
+
+                if (!ModelState.IsValid)
                 {
-                    await NewThreadInput.Image.CopyToAsync(fileStream);
+                    return Page();
                 }
 
-                newThread.ImagePath = "/images/" + uniqueFileName;
+                if (string.IsNullOrWhiteSpace(NewThreadInput.Title) || string.IsNullOrWhiteSpace(NewThreadInput.Message))
+                {
+                    ErrorMessage = "Title and message are required.";
+                    return Page();
+                }
+
+                if (!await _postService.ValidatePostContentAsync(NewThreadInput.Message))
+                {
+                    ErrorMessage = "Invalid message content.";
+                    return Page();
+                }
+
+                if (NewThreadInput.Image != null && !await _postService.ValidateImageAsync(NewThreadInput.Image))
+                {
+                    ErrorMessage = "Invalid image file.";
+                    return Page();
+                }
+
+                var newThread = new ForumThread
+                {
+                    BoardId = boardId,
+                    Title = NewThreadInput.Title,
+                    Message = NewThreadInput.Message,
+                    CreatedBy = userId
+                };
+
+                // –û–±—Ä–∞–±–æ—Ç–∫–∞ –∏–∑–æ–±—Ä–∞–∂–µ–Ω–∏—è
+                if (NewThreadInput.Image != null)
+                {
+                    var uploadsFolder = Path.Combine(_environment.WebRootPath, "images");
+                    if (!Directory.Exists(uploadsFolder))
+                    {
+                        Directory.CreateDirectory(uploadsFolder);
+                    }
+
+                    var uniqueFileName = Guid.NewGuid().ToString() + "_" + NewThreadInput.Image.FileName;
+                    var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                    using (var fileStream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await NewThreadInput.Image.CopyToAsync(fileStream);
+                    }
+
+                    newThread.ImagePath = "/images/" + uniqueFileName;
+                }
+
+                await _threadService.CreateThreadAsync(newThread, userId);
+
+                return RedirectToPage("/ThreadsView", new { boardId = boardId });
             }
-
-            _context.Threads.Add(newThread);
-            await _context.SaveChangesAsync();
-
-            return RedirectToPage("/ThreadsView", new { boardId = boardId });
+            catch (Exception ex)
+            {
+                // –õ–æ–≥–∏—Ä–æ–≤–∞–Ω–∏–µ –æ—à–∏–±–∫–∏
+                return StatusCode(500, "An error occurred while creating the thread");
+            }
         }
     }
 }

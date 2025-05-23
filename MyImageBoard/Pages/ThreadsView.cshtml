@@ -1,5 +1,5 @@
 ﻿@page "{boardId:int}"
-@model NewImageBoard.Pages.ThreadsViewModel
+@model MyImageBoard.Pages.ThreadsViewModel
 @{
     ViewData["Title"] = $"Threads on {Model.Board?.Name}";
 }
@@ -39,9 +39,9 @@
                         }
                         else if (!thread.IsReported)
                         {
-                            <form method="post" asp-page-handler="ReportThread" class="d-inline">
+                            <form method="post">
                                 <input type="hidden" name="threadId" value="@thread.ThreadId" />
-                                <button type="submit" class="btn btn-sm btn-danger ms-2">Пожаловаться</button>
+                                <button type="submit" asp-page-handler="ReportThread" class="btn btn-warning">Report Thread</button>
                             </form>
                         }
                     </div>

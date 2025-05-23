@@ -1,5 +1,5 @@
 ﻿@page "{boardId:int}"
-@model NewImageBoard.Pages.CreateThreadModel
+@model MyImageBoard.Pages.CreateThreadModel
 @{
     ViewData["Title"] = $"Create Thread on {Model.Board?.Name}";
     Layout = "~/Pages/Shared/_Layout.cshtml";
@@ -14,6 +14,15 @@
     }
 
     <form method="post" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="board">Board:</label>
+            <select id="board" name="boardId" class="form-control">
+                @foreach (var board in Model.Boards)
+                {
+                    <option value="@board.BoardId">@board.Name</option>
+                }
+            </select>
+        </div>
         <div class="mb-3">
             <label asp-for="NewThreadInput.Title" class="form-label">Thread Title</label>
             <input asp-for="NewThreadInput.Title" class="form-control" required />

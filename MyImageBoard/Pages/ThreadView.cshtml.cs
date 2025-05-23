@@ -1,31 +1,43 @@
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc;
-using NewImageBoard.Models;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using NewImageBoard.Models;
-using Microsoft.EntityFrameworkCore;
+using MyImageBoard.Models;
+using MyImageBoard.Services.Interfaces;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using System.IO;
 
-namespace NewImageBoard.Pages
+namespace MyImageBoard.Pages
 {
     public class ThreadViewModel : PageModel
     {
-        private readonly ImageBoardContext _context;
+        private readonly IThreadService _threadService;
+        private readonly IBoardService _boardService;
+        private readonly IPostService _postService;
+        private readonly IUserService _userService;
         private readonly IWebHostEnvironment _environment;
 
-        public ThreadViewModel(ImageBoardContext context, IWebHostEnvironment environment)
+        public ThreadViewModel(
+            IThreadService threadService,
+            IBoardService boardService,
+            IPostService postService,
+            IUserService userService,
+            IWebHostEnvironment environment)
         {
-            _context = context;
+            _threadService = threadService;
+            _boardService = boardService;
+            _postService = postService;
+            _userService = userService;
             _environment = environment;
         }
 
         public ForumThread Thread { get; set; }
         public Board Board { get; set; }
         public IList<PostViewModel> Posts { get; set; } = new List<PostViewModel>();
+        public bool IsModerator { get; set; }
+        public int CurrentPage { get; set; } = 1;
+        public int PageSize { get; set; } = 20;
+        public int TotalPages { get; set; }
 
         public class PostViewModel
         {
@@ -48,125 +60,178 @@ namespace NewImageBoard.Pages
 
         public string ErrorMessage { get; set; }
 
-        public async Task<IActionResult> OnGetAsync(int boardId, int threadId)
+        public async Task<IActionResult> OnGetAsync(int boardId, int threadId, int page = 1)
         {
-            Board = await _context.Boards.FirstOrDefaultAsync(b => b.BoardId == boardId);
-            if (Board == null)
+            try
             {
-                return NotFound();
+                Board = await _boardService.GetBoardByIdAsync(boardId);
+                if (Board == null)
+                {
+                    return NotFound();
+                }
+
+                Thread = await _threadService.GetThreadByIdAsync(threadId);
+                if (Thread == null || Thread.BoardId != boardId)
+                {
+                    return NotFound();
+                }
+
+                var userId = User.Identity?.IsAuthenticated == true ? 
+                    int.Parse(User.FindFirst("UserId")?.Value ?? "0") : 0;
+
+                IsModerator = userId > 0 && await _userService.HasPermissionAsync(userId, "ModeratePost");
+
+                CurrentPage = page;
+                var posts = await _threadService.GetThreadPostsAsync(threadId, page, PageSize);
+                var totalPosts = await _threadService.GetThreadPostsCountAsync(threadId);
+                TotalPages = (int)Math.Ceiling(totalPosts / (double)PageSize);
+
+                Posts = posts.Select(p => new PostViewModel
+                {
+                    PostId = p.PostId,
+                    Message = p.Message,
+                    ImagePath = p.ImagePath,
+                    CreatedAt = p.CreatedAt,
+                    CreatedBy = p.CreatedByNavigation?.Username ?? "Anonymous",
+                    IsReported = p.IsReported
+                }).ToList();
+
+                NewPostInput = new PostInputModel();
+                return Page();
             }
-
-            Thread = await _context.Threads
-            .Include(t => t.CreatedByNavigation)
-            .FirstOrDefaultAsync(t => t.ThreadId == threadId && t.BoardId == boardId);
-            if (Thread == null)
+            catch (Exception ex)
             {
-                return NotFound();
+                // Логирование ошибки
+                return StatusCode(500, "An error occurred while loading the thread");
             }
-
-            Posts = await _context.Posts
-            .Where(p => p.ThreadId == threadId)
-            .Include(p => p.CreatedByNavigation)
-            .Select(p => new PostViewModel
-            {
-                PostId = p.PostId,
-                Message = p.Message,
-                ImagePath = p.ImagePath,
-                CreatedAt = p.CreatedAt,
-                CreatedBy = p.CreatedByNavigation != null && p.CreatedBy != null ? p.CreatedByNavigation.Username : "������",
-                IsReported = p.IsReported
-            })
-            .OrderBy(p => p.CreatedAt)
-            .ToListAsync();
-
-            NewPostInput = new PostInputModel();
-            return Page();
         }
 
         public async Task<IActionResult> OnPostAsync(int boardId, int threadId)
         {
-            Board = await _context.Boards.FirstOrDefaultAsync(b => b.BoardId == boardId);
-            if (Board == null)
+            try
             {
-                return NotFound();
-            }
-
-            Thread = await _context.Threads.FirstOrDefaultAsync(t => t.ThreadId == threadId && t.BoardId == boardId);
-            if (Thread == null)
-            {
-                return NotFound();
-            }
-
-            if (!ModelState.IsValid || string.IsNullOrWhiteSpace(NewPostInput.Message))
-            {
-                ErrorMessage = "��������� �����������.";
-                return Page();
-            }
-
-            var newPost = new Post
-            {
-                ThreadId = threadId,
-                Message = NewPostInput.Message,
-                CreatedAt = DateTime.Now
-            };
-
-            if (User.Identity.IsAuthenticated && User.Identity.Name != null)
-            {
-                var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == User.Identity.Name);
-                newPost.CreatedBy = user?.UserId;
-            }
-
-            if (NewPostInput.Image != null)
-            {
-                var uploadsFolder = Path.Combine(_environment.WebRootPath, "images");
-                if (!Directory.Exists(uploadsFolder))
+                Board = await _boardService.GetBoardByIdAsync(boardId);
+                if (Board == null)
                 {
-                    Directory.CreateDirectory(uploadsFolder);
+                    return NotFound();
                 }
 
-                var uniqueFileName = Guid.NewGuid().ToString() + "_" + NewPostInput.Image.FileName;
-                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                Thread = await _threadService.GetThreadByIdAsync(threadId);
+                if (Thread == null || Thread.BoardId != boardId)
                 {
-                    await NewPostInput.Image.CopyToAsync(fileStream);
+                    return NotFound();
                 }
 
-                newPost.ImagePath = "/images/" + uniqueFileName;
+                // Удаляем Image из ModelState
+                ModelState.Remove("NewPostInput.Image");
+
+                if (!ModelState.IsValid || string.IsNullOrWhiteSpace(NewPostInput.Message))
+                {
+                    ErrorMessage = "Please enter a message.";
+                    NewPostInput.Image = null; // сбрасываем картинку, чтобы не ломать разметку
+                    return Page();
+                }
+
+                var userId = User.Identity?.IsAuthenticated == true ? 
+                    int.Parse(User.FindFirst("UserId")?.Value ?? "0") : 0;
+
+                if (!await _postService.ValidatePostContentAsync(NewPostInput.Message))
+                {
+                    ErrorMessage = "Invalid message content.";
+                    return Page();
+                }
+
+                if (NewPostInput.Image != null && !await _postService.ValidateImageAsync(NewPostInput.Image))
+                {
+                    ErrorMessage = "Invalid image file.";
+                    return Page();
+                }
+
+                var newPost = new Post
+                {
+                    ThreadId = threadId,
+                    Message = NewPostInput.Message,
+                    CreatedBy = userId
+                };
+
+                if (NewPostInput.Image != null)
+                {
+                    var uploadsFolder = Path.Combine(_environment.WebRootPath, "images");
+                    if (!Directory.Exists(uploadsFolder))
+                    {
+                        Directory.CreateDirectory(uploadsFolder);
+                    }
+
+                    var uniqueFileName = Guid.NewGuid().ToString() + "_" + NewPostInput.Image.FileName;
+                    var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                    using (var fileStream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await NewPostInput.Image.CopyToAsync(fileStream);
+                    }
+
+                    newPost.ImagePath = "/images/" + uniqueFileName;
+                }
+
+                await _postService.CreatePostAsync(newPost, userId);
+
+                return RedirectToPage("/ThreadView", new { boardId, threadId });
             }
-
-            _context.Posts.Add(newPost);
-            await _context.SaveChangesAsync();
-
-            return RedirectToPage("/ThreadView", new { boardId, threadId });
+            catch (Exception ex)
+            {
+                // Логирование ошибки
+                return StatusCode(500, "An error occurred while creating the post");
+            }
         }
 
         public async Task<IActionResult> OnPostReportThreadAsync(int boardId, int threadId)
         {
-            var thread = await _context.Threads.FirstOrDefaultAsync(t => t.ThreadId == threadId && t.BoardId == boardId);
-            if (thread == null)
+            try
             {
-                return NotFound();
+                var userId = User.Identity?.IsAuthenticated == true ? 
+                    int.Parse(User.FindFirst("UserId")?.Value ?? "0") : 0;
+
+                var thread = await _threadService.GetThreadByIdAsync(threadId);
+                if (thread == null || thread.BoardId != boardId)
+                {
+                    return NotFound();
+                }
+
+                // Здесь можно добавить логику репортов, если она нужна
+                // Например, создание записи в таблице репортов
+
+                return RedirectToPage("/ThreadView", new { boardId, threadId });
             }
-
-            thread.IsReported = true;
-            await _context.SaveChangesAsync();
-
-            return RedirectToPage("/ThreadView", new { boardId, threadId });
+            catch (Exception ex)
+            {
+                // Логирование ошибки
+                return StatusCode(500, "An error occurred while reporting the thread");
+            }
         }
 
         public async Task<IActionResult> OnPostReportPostAsync(int boardId, int threadId, int postId)
         {
-            var post = await _context.Posts.FirstOrDefaultAsync(p => p.PostId == postId && p.ThreadId == threadId);
-            if (post == null)
+            try
             {
-                return NotFound();
+                var userId = User.Identity?.IsAuthenticated == true ? 
+                    int.Parse(User.FindFirst("UserId")?.Value ?? "0") : 0;
+
+                var post = await _postService.GetPostByIdAsync(postId);
+                if (post == null || post.ThreadId != threadId)
+                {
+                    return NotFound();
+                }
+
+                // Здесь можно добавить логику репортов, если она нужна
+                // Например, создание записи в таблице репортов
+
+                return RedirectToPage("/ThreadView", new { boardId, threadId });
             }
-
-            post.IsReported = true;
-            await _context.SaveChangesAsync();
-
-            return RedirectToPage("/ThreadView", new { boardId, threadId });
+            catch (Exception ex)
+            {
+                // Логирование ошибки
+                return StatusCode(500, "An error occurred while reporting the post");
+            }
         }
     }
 }

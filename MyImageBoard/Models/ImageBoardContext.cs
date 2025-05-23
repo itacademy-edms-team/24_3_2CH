@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
+using BCrypt.Net;
 
-namespace NewImageBoard.Models;
+namespace MyImageBoard.Models;
 
 public partial class ImageBoardContext : DbContext
 {
@@ -28,8 +29,12 @@ public partial class ImageBoardContext : DbContext
     public virtual DbSet<User> Users { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=MAXIMALLY;Database=ImageBoard;Trusted_Connection=True;TrustServerCertificate=True;");
+    {
+        if (!optionsBuilder.IsConfigured)
+        {
+            optionsBuilder.UseSqlServer("Server=MAXIMALLY;Database=ImageBoard;Trusted_Connection=True;TrustServerCertificate=True;");
+        }
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -109,6 +114,7 @@ public partial class ImageBoardContext : DbContext
                 .HasColumnType("datetime");
             entity.Property(e => e.ImagePath).HasMaxLength(256);
             entity.Property(e => e.ThreadId).HasColumnName("ThreadID");
+            entity.Property(e => e.CreatedBy).IsRequired(false);
 
             entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.Posts)
                 .HasForeignKey(d => d.CreatedBy)
@@ -135,6 +141,7 @@ public partial class ImageBoardContext : DbContext
                 .HasColumnType("datetime");
             entity.Property(e => e.ImagePath).HasMaxLength(256);
             entity.Property(e => e.Title).HasMaxLength(100);
+            entity.Property(e => e.CreatedBy).IsRequired(false);
 
             entity.HasOne(d => d.Board).WithMany(p => p.Threads)
                 .HasForeignKey(d => d.BoardId)

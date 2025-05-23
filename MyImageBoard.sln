@@ -5,6 +5,8 @@ VisualStudioVersion = 17.12.35707.178
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyImageBoard", "MyImageBoard\MyImageBoard.csproj", "{FA4152C5-40FD-4508-BC9E-31284B36AF27}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyImageBoard.Tests", "MyImageBoard.Tests\MyImageBoard.Tests.csproj", "{B704328B-B5AA-4F7E-8304-930431E7FC1D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{FA4152C5-40FD-4508-BC9E-31284B36AF27}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FA4152C5-40FD-4508-BC9E-31284B36AF27}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FA4152C5-40FD-4508-BC9E-31284B36AF27}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B704328B-B5AA-4F7E-8304-930431E7FC1D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B704328B-B5AA-4F7E-8304-930431E7FC1D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B704328B-B5AA-4F7E-8304-930431E7FC1D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B704328B-B5AA-4F7E-8304-930431E7FC1D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
