@@ -1,0 +1,186 @@
+@page
+@model ForumProject.Pages.AdminPanel.IndexModel
+@{
+    ViewData["Title"] = "Admin Panel";
+}
+
+@if (Model.CurrentSuperUser == null)
+{
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Вход в админ-панель</h5>
+                    </div>
+                    <div class="card-body">
+                        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+                        {
+                            <div class="alert alert-danger">@Model.ErrorMessage</div>
+                        }
+                        <form method="post">
+                            <div class="mb-3">
+                                <label asp-for="Username" class="form-label">Имя пользователя</label>
+                                <input asp-for="Username" class="form-control" required />
+                            </div>
+                            <div class="mb-3">
+                                <label asp-for="Password" class="form-label">Пароль</label>
+                                <input asp-for="Password" type="password" class="form-control" required />
+                            </div>
+                            <button type="submit" class="btn btn-primary">Войти</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Информация</h5>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Пользователь:</strong> @Model.CurrentSuperUser.Username</p>
+                        <p><strong>Группа:</strong> @Model.CurrentSuperUser.Group.Name</p>
+                        <form method="post" asp-page-handler="Logout">
+                            <button type="submit" class="btn btn-danger">Выйти</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Разрешения</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled">
+                            @foreach (var permission in Model.UserPermissions)
+                            {
+                                <li><i class="fas fa-check text-success"></i> @permission.Name</li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-9">
+                @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+                {
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        @Model.SuccessMessage
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+                {
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        @Model.ErrorMessage
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+
+                <div class="accordion" id="adminAccordion">
+                    @if (Model.UserPermissions.Any(p => p.Name == "DeleteThread"))
+                    {
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#threadsCollapse">
+                                    Управление тредами
+                                </button>
+                            </h2>
+                            <div id="threadsCollapse" class="accordion-collapse collapse show" data-bs-parent="#adminAccordion">
+                                <div class="accordion-body">
+                                    <partial name="_DeleteThreadPartial" model="Model.Threads" />
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    @if (Model.UserPermissions.Any(p => p.Name == "DeleteComment"))
+                    {
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#commentsCollapse">
+                                    Управление комментариями
+                                </button>
+                            </h2>
+                            <div id="commentsCollapse" class="accordion-collapse collapse" data-bs-parent="#adminAccordion">
+                                <div class="accordion-body">
+                                    <partial name="_DeleteCommentPartial" model="Model.Comments" />
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    @if (Model.UserPermissions.Any(p => p.Name == "DeleteComplaint"))
+                    {
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#complaintsCollapse">
+                                    Управление жалобами
+                                </button>
+                            </h2>
+                            <div id="complaintsCollapse" class="accordion-collapse collapse" data-bs-parent="#adminAccordion">
+                                <div class="accordion-body">
+                                    <partial name="_DeleteComplaintPartial" model="Model.Complaints" />
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    @if (Model.UserPermissions.Any(p => p.Name == "CreateBoard"))
+                    {
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#boardsCollapse">
+                                    Управление досками
+                                </button>
+                            </h2>
+                            <div id="boardsCollapse" class="accordion-collapse collapse" data-bs-parent="#adminAccordion">
+                                <div class="accordion-body">
+                                    <partial name="_ManageBoardsPartial" model="Model.Boards" />
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    @if (Model.UserPermissions.Any(p => p.Name == "CreateSuperUser"))
+                    {
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#superUsersCollapse">
+                                    Управление администраторами
+                                </button>
+                            </h2>
+                            <div id="superUsersCollapse" class="accordion-collapse collapse" data-bs-parent="#adminAccordion">
+                                <div class="accordion-body">
+                                    <partial name="_ManageSuperUsersPartial" model="Model.SuperUsers" />
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        // Enable Bootstrap tabs
+        var triggerTabList = [].slice.call(document.querySelectorAll('#permissionTabs button'))
+        triggerTabList.forEach(function (triggerEl) {
+            var tabTrigger = new bootstrap.Tab(triggerEl)
+            triggerEl.addEventListener('click', function (event) {
+                event.preventDefault()
+                tabTrigger.show()
+            })
+        })
+    </script>
+} 

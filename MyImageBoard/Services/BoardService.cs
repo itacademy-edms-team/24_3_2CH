@@ -1,187 +1,95 @@
+﻿using ForumProject.Data;
+using ForumProject.Data.Models;
+using ForumProject.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using MyImageBoard.Models;
-using MyImageBoard.Services.Interfaces;
 
-namespace MyImageBoard.Services;
-
-public class BoardService : IBoardService
+namespace ForumProject.Services
 {
-    private readonly ImageBoardContext _context;
-    private readonly IUserService _userService;
-    private readonly ILogger<BoardService> _logger;
-
-    public BoardService(
-        ImageBoardContext context,
-        IUserService userService,
-        ILogger<BoardService> logger)
+    public class BoardService : IBoardService
     {
-        _context = context;
-        _userService = userService;
-        _logger = logger;
-    }
+        private readonly ApplicationDbContext _context;
+        private readonly IThreadService _threadService; // Для рекурсивного удаления тредов
 
-    public async Task<IEnumerable<Board>> GetAllBoardsAsync()
-    {
-        try
+        // Добавляем IThreadService через Dependency Injection
+        public BoardService(ApplicationDbContext context, IThreadService threadService)
+        {
+            _context = context;
+            _threadService = threadService;
+        }
+
+        public async Task<Board?> GetBoardByIdAsync(int id)
         {
             return await _context.Boards
-                .Include(b => b.CreatedByNavigation)
-                .OrderByDescending(b => b.CreatedAt)
+                .Include(b => b.Threads)
+                    .ThenInclude(t => t.MediaFiles)
+                .Include(b => b.Threads)
+                    .ThenInclude(t => t.Comments)
+                .Include(b => b.Threads)
+                    .ThenInclude(t => t.Quizzes)
+                        .ThenInclude(q => q.Options)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(b => b.Id == id);
+        }
+
+        public async Task<IEnumerable<Board>> GetAllBoardsAsync()
+        {
+            return await _context.Boards
+                .AsNoTracking()
                 .ToListAsync();
         }
-        catch (Exception ex)
+
+        public async Task<Board> CreateBoardAsync(Board board)
         {
-            _logger.LogError(ex, "Error getting all boards");
-            throw;
-        }
-    }
-
-    public async Task<Board> GetBoardByIdAsync(int id)
-    {
-        try
-        {
-            var board = await _context.Boards
-                .Include(b => b.CreatedByNavigation)
-                .FirstOrDefaultAsync(b => b.BoardId == id);
-
-            if (board is null)
-            {
-                throw new KeyNotFoundException($"Board with ID {id} not found");
-            }
-
-            return board;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting board by ID {BoardId}", id);
-            throw;
-        }
-    }
-
-    public async Task<Board> GetBoardByShortNameAsync(string shortName)
-    {
-        try
-        {
-            var board = await _context.Boards
-                .Include(b => b.CreatedByNavigation)
-                .FirstOrDefaultAsync(b => b.ShortName == shortName);
-
-            if (board is null)
-            {
-                throw new KeyNotFoundException($"Board with short name {shortName} not found");
-            }
-
-            return board;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting board by short name {ShortName}", shortName);
-            throw;
-        }
-    }
-
-    public async Task<Board> CreateBoardAsync(Board board, int userId)
-    {
-        try
-        {
-            if (!await _userService.HasPermissionAsync(userId, "CreateBoard"))
-            {
-                throw new UnauthorizedAccessException("User does not have permission to create boards");
-            }
-
-            board.CreatedBy = userId;
             board.CreatedAt = DateTime.UtcNow;
-
             _context.Boards.Add(board);
             await _context.SaveChangesAsync();
-
             return board;
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error creating board");
-            throw;
-        }
-    }
 
-    public async Task<Board> UpdateBoardAsync(Board board)
-    {
-        try
+        public async Task<bool> UpdateBoardAsync(Board board)
         {
-            var existingBoard = await _context.Boards.FindAsync(board.BoardId);
-            if (existingBoard is null)
+            var existingBoard = await _context.Boards.FindAsync(board.Id);
+            if (existingBoard == null)
             {
-                throw new KeyNotFoundException($"Board with ID {board.BoardId} not found");
+                return false;
             }
 
-            if (!await _userService.HasPermissionAsync(board.CreatedBy, "ModifyBoard"))
-            {
-                throw new UnauthorizedAccessException("User does not have permission to modify boards");
-            }
-
-            existingBoard.Name = board.Name;
-            existingBoard.ShortName = board.ShortName;
+            existingBoard.Title = board.Title;
             existingBoard.Description = board.Description;
 
-            await _context.SaveChangesAsync();
-
-            return existingBoard;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error updating board {BoardId}", board.BoardId);
-            throw;
-        }
-    }
-
-    public async Task DeleteBoardAsync(int id)
-    {
-        try
-        {
-            var board = await _context.Boards.FindAsync(id);
-            if (board is null)
+            try
             {
-                throw new KeyNotFoundException($"Board with ID {id} not found");
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public async Task<bool> DeleteBoardAsync(int id)
+        {
+            var board = await _context.Boards
+                .Include(b => b.Threads)
+                .FirstOrDefaultAsync(b => b.Id == id);
+
+            if (board == null)
+            {
+                return false;
             }
 
-            if (!await _userService.HasPermissionAsync(board.CreatedBy, "DeleteBoard"))
+            // Удаляем все треды доски (это автоматически удалит все связанные сущности через ThreadService)
+            foreach (var thread in board.Threads)
             {
-                throw new UnauthorizedAccessException("User does not have permission to delete boards");
+                await _threadService.DeleteThreadAsync(thread.Id);
             }
 
+            // Удаляем саму доску
             _context.Boards.Remove(board);
             await _context.SaveChangesAsync();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error deleting board {BoardId}", id);
-            throw;
-        }
-    }
 
-    public async Task<bool> IsUserModeratorAsync(int boardId, int userId)
-    {
-        try
-        {
-            return await _userService.HasPermissionAsync(userId, "ModerateBoard");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error checking if user {UserId} is moderator for board {BoardId}", userId, boardId);
-            throw;
+            return true;
         }
     }
-
-    public async Task<bool> IsUserAdminAsync(int userId)
-    {
-        try
-        {
-            return await _userService.HasPermissionAsync(userId, "Admin");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error checking if user {UserId} is admin", userId);
-            throw;
-        }
-    }
-} 
+}

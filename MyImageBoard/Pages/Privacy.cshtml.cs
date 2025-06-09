@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace MyImageBoard.Pages
+namespace ForumProject.Pages
 {
     public class PrivacyModel : PageModel
     {

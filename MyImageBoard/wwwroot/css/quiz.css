@@ -1,0 +1,136 @@
+.quiz-container {
+    background-color: #f8f9fa;
+    border-radius: 0.25rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.quiz-container .card {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+}
+
+.quiz-container .card-body {
+    padding: 1.25rem;
+}
+
+.quiz-container .card-title {
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.option-group {
+    position: relative;
+}
+
+.option-group .remove-option {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    line-height: 1;
+    font-size: 1.5rem;
+}
+
+.votes-count {
+    margin-left: 0.5rem;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.form-check {
+    margin-bottom: 0.5rem;
+}
+
+.form-check-input:disabled + .form-check-label {
+    opacity: 0.7;
+}
+
+#createQuizModal .modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+#optionsContainer {
+    margin-bottom: 1rem;
+}
+
+#addOptionBtn {
+    margin-bottom: 1rem;
+}
+
+/* Анимация для добавления/удаления опций */
+.option-group {
+    transition: all 0.3s ease;
+}
+
+.option-group.removing {
+    opacity: 0;
+    transform: translateX(-20px);
+}
+
+/* Стили для отображения результатов голосования */
+.quiz-results {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e0e0e0;
+}
+
+.progress {
+    height: 0.5rem;
+    margin-top: 0.25rem;
+    margin-bottom: 1rem;
+    background-color: #e9ecef;
+    border-radius: 0.25rem;
+}
+
+.progress-bar {
+    background-color: #007bff;
+    transition: width 0.6s ease;
+}
+
+.quiz-question {
+    font-weight: 500;
+    margin-bottom: 1rem;
+}
+
+.quiz-options .form-check {
+    margin-bottom: 0.5rem;
+}
+
+.quiz-options .progress {
+    height: 4px;
+    margin-top: 0.25rem;
+}
+
+.quiz-options .text-muted {
+    font-size: 0.875rem;
+}
+
+.quiz-submit {
+    margin-top: 1rem;
+}
+
+#quizzesPreviews .card {
+    background-color: #f8f9fa;
+}
+
+#quizzesPreviews .card-title {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+}
+
+#quizzesPreviews .list-group-item {
+    background-color: transparent;
+    border-left: none;
+    border-right: none;
+    padding: 0.5rem 0;
+}
+
+#quizzesPreviews .list-group-item:first-child {
+    border-top: none;
+}
+
+#quizzesPreviews .list-group-item:last-child {
+    border-bottom: none;
+} 

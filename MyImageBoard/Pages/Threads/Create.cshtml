@@ -1,0 +1,108 @@
+﻿@page "{boardId:int}" // Указываем, что страница принимает целочисленный BoardId как параметр маршрута
+@model ForumProject.Pages.Threads.CreateModel
+@{
+    ViewData["Title"] = "Создать новый тред";
+}
+
+<link rel="stylesheet" href="~/css/quiz.css" />
+
+<h1>Создать новый тред на доске "@Model.BoardTitle"</h1>
+
+<div class="row">
+    <div class="col-md-8">
+        <form id="createThreadForm" method="post" enctype="multipart/form-data">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="Thread.BoardId" /> @* Скрытое поле для BoardId *@
+            <input type="hidden" id="threadQuizzes" name="Quizzes" value="[]" />
+
+            <div class="form-group mb-3">
+                <label asp-for="Thread.Title" class="control-label"></label>
+                <input asp-for="Thread.Title" class="form-control" />
+                <span asp-validation-for="Thread.Title" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label asp-for="Thread.Content" class="control-label"></label>
+                <textarea asp-for="Thread.Content" class="form-control" rows="10"></textarea>
+                <span asp-validation-for="Thread.Content" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label asp-for="Thread.Tripcode" class="control-label">Трипкод (необязательно)</label>
+                <input asp-for="Thread.Tripcode" class="form-control" placeholder="username#password" />
+                <small class="form-text text-muted">Формат: username#password. Пример: Anon#secretpass</small>
+                <span asp-validation-for="Thread.Tripcode" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <button type="button" class="btn btn-outline-primary" onclick="showCreateQuizModal()">
+                    <i class="bi bi-plus-circle"></i> Добавить опрос
+                </button>
+            </div>
+
+            <div id="quizzesPreviews" class="mb-3">
+                <!-- Здесь будут отображаться превью созданных опросов -->
+            </div>
+
+            <partial name="_FileUploadPartial" />
+
+            <div class="form-group mt-3">
+                <input type="submit" value="Создать тред" class="btn btn-primary" />
+                <a asp-page="/Boards/Details" asp-route-id="@Model.Thread.BoardId" class="btn btn-secondary">Отмена</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script src="~/js/quizManager.js"></script>
+    <script>
+        let quizModal;
+
+        // Инициализируем модальное окно при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            QuizManager.initializeCreateQuizModal();
+            quizModal = new bootstrap.Modal(document.getElementById('createQuizModal'));
+        });
+
+        function showCreateQuizModal() {
+            if (quizModal) {
+                quizModal.show();
+            }
+        }
+
+        // Обрабатываем отправку формы
+        document.getElementById('createThreadForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            // Добавляем файлы из _FileUploadPartial
+            if (typeof selectedFiles !== 'undefined') {
+                selectedFiles.forEach(file => {
+                    formData.append('Files', file);
+                });
+            }
+            
+            try {
+                const response = await fetch(window.location.href, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const text = await response.text();
+                    throw new Error(text);
+                }
+
+                if (response.redirected) {
+                    window.location.href = response.url;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Произошла ошибка при создании треда: ' + error.message);
+            }
+        });
+    </script>
+}

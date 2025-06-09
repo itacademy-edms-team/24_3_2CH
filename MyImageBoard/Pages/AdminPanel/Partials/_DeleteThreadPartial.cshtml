@@ -1,0 +1,49 @@
+@using ForumProject.Data.Models
+@model ForumProject.Pages.AdminPanel.IndexModel
+
+<div class="card">
+    <div class="card-header">
+        <h4>Delete Threads</h4>
+    </div>
+    <div class="card-body">
+        <form method="post" asp-page-handler="SearchThreads" class="mb-4">
+            <div class="input-group">
+                <input type="text" name="searchTerm" class="form-control" placeholder="Search threads..." />
+                <button type="submit" class="btn btn-primary">Search</button>
+            </div>
+        </form>
+
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Board</th>
+                        <th>Created At</th>
+                        <th>Has Complaints</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var thread in Model.Threads)
+                    {
+                        <tr>
+                            <td>@thread.Title</td>
+                            <td>@thread.Board.Title</td>
+                            <td>@thread.CreatedAt.ToLocalTime()</td>
+                            <td>@(thread.HasComplaint ? "Yes" : "No")</td>
+                            <td>
+                                <form method="post" asp-page-handler="DeleteThread" class="d-inline">
+                                    <input type="hidden" name="threadId" value="@thread.Id" />
+                                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this thread?')">
+                                        Delete
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div> 

@@ -1,0 +1,62 @@
+@model ForumProject.Pages.AdminPanel.IndexModel
+
+<div class="card">
+    <div class="card-header">
+        <h4>Create New Superuser</h4>
+    </div>
+    <div class="card-body">
+        <form method="post" asp-page-handler="CreateSuperUser">
+            <div class="mb-3">
+                <label class="form-label">Username</label>
+                <input type="text" name="newUsername" class="form-control" required />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Password</label>
+                <input type="password" name="newPassword" class="form-control" required />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Group</label>
+                <select name="groupId" class="form-select" required>
+                    <option value="">Select a group</option>
+                    <option value="1">Moderator</option>
+                    <option value="2">Admin</option>
+                </select>
+            </div>
+            @if (Model.CurrentSuperUser?.Group.Name == "Father")
+            {
+                <div class="mb-3">
+                    <label class="form-label">Custom Permissions</label>
+                    <div class="form-check">
+                        <input type="checkbox" name="permissions" value="DeleteThread" class="form-check-input" />
+                        <label class="form-check-label">Delete Threads</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" name="permissions" value="DeleteComment" class="form-check-input" />
+                        <label class="form-check-label">Delete Comments</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" name="permissions" value="DeleteComplaint" class="form-check-input" />
+                        <label class="form-check-label">Delete Complaints</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" name="permissions" value="CreateBoard" class="form-check-input" />
+                        <label class="form-check-label">Create Boards</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" name="permissions" value="DeleteBoard" class="form-check-input" />
+                        <label class="form-check-label">Delete Boards</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" name="permissions" value="CreateSuperUser" class="form-check-input" />
+                        <label class="form-check-label">Create Superusers</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" name="permissions" value="BlockSuperUser" class="form-check-input" />
+                        <label class="form-check-label">Block Superusers</label>
+                    </div>
+                </div>
+            }
+            <button type="submit" class="btn btn-primary">Create Superuser</button>
+        </form>
+    </div>
+</div> 

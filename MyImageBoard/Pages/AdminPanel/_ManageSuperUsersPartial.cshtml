@@ -1,0 +1,99 @@
+@model List<ForumProject.Data.Models.SuperUser>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Создание администратора</h5>
+    </div>
+    <div class="card-body">
+        <form method="post" asp-page-handler="CreateSuperUser">
+            <div class="mb-3">
+                <label for="newUsername" class="form-label">Имя пользователя</label>
+                <input type="text" class="form-control" id="newUsername" name="newUsername" required maxlength="50">
+            </div>
+            <div class="mb-3">
+                <label for="newPassword" class="form-label">Пароль</label>
+                <input type="password" class="form-control" id="newPassword" name="newPassword" required>
+            </div>
+            <div class="mb-3">
+                <label for="groupId" class="form-label">Группа</label>
+                <select class="form-select" id="groupId" name="groupId" required>
+                    <option value="">Выберите группу</option>
+                    <option value="1">Модератор</option>
+                    <option value="2">Администратор</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Создать администратора</button>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Существующие администраторы</h5>
+    </div>
+    <div class="card-body">
+        @if (Model != null && Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Имя пользователя</th>
+                            <th>Группа</th>
+                            <th>Создан</th>
+                            <th>Статус</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var user in Model)
+                        {
+                            <tr>
+                                <td>@user.Id</td>
+                                <td>@user.Username</td>
+                                <td>@user.Group.Name</td>
+                                <td>@user.CreatedAt.ToString("dd.MM.yyyy HH:mm")</td>
+                                <td>
+                                    @if (user.IsBlocked)
+                                    {
+                                        <span class="badge bg-danger">Заблокирован</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success">Активен</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (user.Group.Name != "Father")
+                                    {
+                                        <form method="post" asp-page-handler="ToggleBlock" asp-route-userId="@user.Id" class="d-inline">
+                                            <button type="submit" class="btn @(user.IsBlocked ? "btn-success" : "btn-warning") btn-sm">
+                                                @if (user.IsBlocked)
+                                                {
+                                                    <i class="fas fa-unlock"></i>
+                                                    <span>Разблокировать</span>
+                                                }
+                                                else
+                                                {
+                                                    <i class="fas fa-lock"></i>
+                                                    <span>Заблокировать</span>
+                                                }
+                                            </button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-info">
+                Нет администраторов для отображения.
+            </div>
+        }
+    </div>
+</div> 

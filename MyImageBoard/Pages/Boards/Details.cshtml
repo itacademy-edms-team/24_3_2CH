@@ -1,0 +1,155 @@
+﻿@page "{id:int}" // Указываем, что страница принимает целочисленный ID как параметр маршрута
+@model ForumProject.Pages.Boards.DetailsModel
+@{
+    ViewData["Title"] = Model.Board?.Title ?? "Доска не найдена";
+}
+
+@if (Model.Board == null)
+{
+    <h2>Доска не найдена</h2>
+    <p>К сожалению, доски с таким идентификатором не существует.</p>
+    <div>
+        <a asp-page="Index">Вернуться к списку досок</a>
+    </div>
+}
+else
+{
+    <div class="board-header mb-4">
+        <h1>@Model.Board.Title</h1>
+        <p class="lead">@Model.Board.Description</p>
+        <small class="text-muted">Создана: @Model.Board.CreatedAt.ToShortDateString()</small>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3>Треды</h3>
+        <a asp-page="/Threads/Create" asp-route-boardId="@Model.Board.Id" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Создать новый тред
+        </a>
+    </div>
+
+    @if (Model.Board.Threads != null && Model.Board.Threads.Any())
+    {
+        <div class="threads-container">
+            @foreach (var thread in Model.Board.Threads.OrderByDescending(t => t.CreatedAt))
+            {
+                <div class="thread-card card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title mb-0">@thread.Title</h5>
+                            <small class="text-muted">
+                                Автор: @(string.IsNullOrEmpty(thread.Tripcode) ? "Аноним" : thread.Tripcode) | 
+                                @thread.CreatedAt.ToShortDateString() | 
+                                <i class="bi bi-eye"></i> @thread.ViewsCount
+                            </small>
+                        </div>
+                        <a asp-page="/Threads/Details" asp-route-id="@thread.Id" class="btn btn-outline-primary btn-sm">
+                            Перейти к треду
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">@thread.Content</p>
+
+                        @if (thread.MediaFiles != null && thread.MediaFiles.Any())
+                        {
+                            <div class="media-files mt-3">
+                                <div class="d-flex flex-wrap gap-2">
+                                    @foreach (var mediaFile in thread.MediaFiles)
+                                    {
+                                        <div class="media-file" style="width: 150px; height: 150px;">
+                                            @if (mediaFile.FileType == "image")
+                                            {
+                                                <a href="/@mediaFile.FileName" target="_blank" class="d-block h-100">
+                                                    <img src="/@mediaFile.FileName" class="img-thumbnail w-100 h-100 object-fit-cover" alt="Прикрепленное изображение" />
+                                                </a>
+                                            }
+                                            else if (mediaFile.FileType == "video")
+                                            {
+                                                <div class="video-container">
+                                                    <video controls class="w-100 h-100">
+                                                        <source src="/@mediaFile.FileName" type="@mediaFile.MimeType">
+                                                        Ваш браузер не поддерживает видео.
+                                                    </video>
+                                                </div>
+                                            }
+                                            else if (mediaFile.FileType == "gif")
+                                            {
+                                                <a href="/@mediaFile.FileName" target="_blank" class="d-block h-100">
+                                                    <img src="/@mediaFile.FileName" class="img-thumbnail w-100 h-100 object-fit-cover" alt="GIF анимация" />
+                                                </a>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        @if (thread.Quizzes != null && thread.Quizzes.Any())
+                        {
+                            <div class="quizzes mt-3">
+                                @foreach (var quiz in thread.Quizzes)
+                                {
+                                    <partial name="_QuizPartial" model="quiz" />
+                                }
+                            </div>
+                        }
+
+                        @if (thread.Comments != null && thread.Comments.Any())
+                        {
+                            <div class="comments-info mt-3">
+                                <i class="bi bi-chat"></i> @thread.Comments.Count комментариев
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> На этой доске пока нет тредов. Будьте первым, кто создаст тред!
+        </div>
+    }
+
+    <hr />
+    <div>
+        <a asp-page="Index" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Вернуться к списку досок
+        </a>
+    </div>
+}
+
+<style>
+    .thread-card {
+        transition: transform 0.2s;
+    }
+
+    .thread-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .media-file {
+        position: relative;
+        overflow: hidden;
+        border-radius: 4px;
+    }
+
+    .media-file img, .media-file video {
+        transition: transform 0.2s;
+        object-fit: cover;
+    }
+
+    .media-file:hover img, .media-file:hover video {
+        transform: scale(1.05);
+    }
+
+    .video-container {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #000;
+    }
+</style>

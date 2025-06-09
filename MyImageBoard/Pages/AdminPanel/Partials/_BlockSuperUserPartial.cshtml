@@ -1,0 +1,43 @@
+@using ForumProject.Data.Models
+@model ForumProject.Pages.AdminPanel.IndexModel
+
+<div class="card">
+    <div class="card-header">
+        <h4>Manage Superuser Status</h4>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Group</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in Model.SuperUsers)
+                    {
+                        @if (user.Group.Name != "Father" && user.Id != Model.CurrentSuperUser?.Id)
+                        {
+                            <tr>
+                                <td>@user.Username</td>
+                                <td>@user.Group.Name</td>
+                                <td>@(user.IsBlocked ? "Blocked" : "Active")</td>
+                                <td>
+                                    <form method="post" asp-page-handler="ToggleBlock" class="d-inline">
+                                        <input type="hidden" name="userId" value="@user.Id" />
+                                        <button type="submit" class="btn btn-@(user.IsBlocked ? "success" : "danger") btn-sm">
+                                            @(user.IsBlocked ? "Unblock" : "Block")
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div> 

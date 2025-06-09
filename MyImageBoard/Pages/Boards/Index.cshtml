@@ -1,0 +1,40 @@
+﻿@page
+@model ForumProject.Pages.Boards.IndexModel
+@{
+    ViewData["Title"] = "Доски форума";
+}
+
+<h1>Доски форума</h1>
+
+@if (Model.Boards != null && Model.Boards.Any())
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Название</th>
+                <th>Описание</th>
+                <th>Создана</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var board in Model.Boards)
+            {
+                <tr>
+                    <td>
+                        <a asp-page="Details" asp-route-id="@board.Id">@board.Title</a>
+                    </td>
+                    <td>
+                        @board.Description
+                    </td>
+                    <td>
+                        @board.CreatedAt.ToShortDateString()
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>Досок пока нет.</p>
+}

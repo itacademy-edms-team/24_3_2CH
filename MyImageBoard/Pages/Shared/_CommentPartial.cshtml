@@ -1,0 +1,176 @@
+@model (ForumProject.Data.Models.Comment comment, bool hasUserLiked, bool hasUserComplained, int userFingerprintId)
+
+<div class="comment mb-3 p-3 border rounded position-relative" id="comment_@Model.comment.Id">
+    <div class="comment-content">
+        <div class="comment-info mb-2">
+            <span class="author">@(string.IsNullOrEmpty(Model.comment.Tripcode) ? "Аноним" : Model.comment.Tripcode)</span>
+            <span class="text-muted ms-2">@Model.comment.CreatedAt.ToShortDateString()</span>
+        </div>
+        <p>@Model.comment.Content</p>
+
+        @if (Model.comment.MediaFiles != null && Model.comment.MediaFiles.Any())
+        {
+            <div class="media-files mt-2">
+                <div class="d-flex flex-wrap gap-2">
+                    @foreach (var mediaFile in Model.comment.MediaFiles)
+                    {
+                        <div class="media-file" style="width: 200px; height: 200px;">
+                            @if (mediaFile.FileType == "image")
+                            {
+                                <a href="/@mediaFile.FileName" target="_blank" class="d-block h-100">
+                                    <img src="/@mediaFile.FileName" class="img-thumbnail w-100 h-100 object-fit-cover" alt="Прикрепленное изображение" />
+                                </a>
+                            }
+                            else if (mediaFile.FileType == "video")
+                            {
+                                <div class="video-container">
+                                    <video controls class="w-100 h-100">
+                                        <source src="/@mediaFile.FileName" type="@mediaFile.MimeType">
+                                        Ваш браузер не поддерживает видео.
+                                    </video>
+                                </div>
+                            }
+                            else if (mediaFile.FileType == "gif")
+                            {
+                                <a href="/@mediaFile.FileName" target="_blank" class="d-block h-100">
+                                    <img src="/@mediaFile.FileName" class="img-thumbnail w-100 h-100 object-fit-cover" alt="GIF анимация" />
+                                </a>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="comment-actions mt-2 d-flex gap-2">
+        <form method="post" asp-page-handler="ToggleLike">
+            <input type="hidden" name="commentId" value="@Model.comment.Id" />
+            <button type="submit" class="btn @(Model.hasUserLiked ? "btn-danger" : "btn-outline-danger") btn-sm">
+                <i class="bi bi-heart-fill"></i>
+                Лайк <span class="badge bg-secondary">@Model.comment.Likes?.Count</span>
+            </button>
+        </form>
+
+        @if (!Model.hasUserComplained)
+        {
+            <button type="button" class="btn btn-outline-warning btn-sm" 
+                    onclick="showComplaintModal(null, @Model.comment.Id, '@Model.comment.Content.Substring(0, Math.Min(30, Model.comment.Content.Length))...')">
+                <i class="bi bi-exclamation-triangle"></i> Пожаловаться
+            </button>
+        }
+        else
+        {
+            <button type="button" class="btn btn-warning btn-sm" disabled>
+                <i class="bi bi-exclamation-triangle"></i> Жалоба отправлена
+            </button>
+        }
+
+        <button type="button" class="btn btn-outline-primary btn-sm" onclick="toggleReplyForm(@Model.comment.Id)">
+            <i class="bi bi-reply"></i> Ответить
+        </button>
+    </div>
+
+    @* Форма для ответа на комментарий *@
+    <div id="replyForm_@Model.comment.Id" class="reply-form mt-3" style="display: none;">
+        <form method="post" asp-page-handler="AddComment" enctype="multipart/form-data">
+            <input type="hidden" name="NewComment.ThreadId" value="@Model.comment.ThreadId" />
+            <input type="hidden" name="NewComment.ParentCommentId" value="@Model.comment.Id" />
+            <div class="form-group">
+                <textarea name="NewComment.Content" class="form-control" rows="3" required 
+                          placeholder="Напишите ваш ответ..."></textarea>
+            </div>
+            <div class="form-group mb-3">
+                <label class="control-label">Трипкод (необязательно)</label>
+                <input type="text" name="NewComment.Tripcode" class="form-control" placeholder="username#password" />
+                <small class="form-text text-muted">Формат: username#password. Пример: Anon#secretpass</small>
+            </div>
+
+            <div class="form-group mb-3">
+                <label class="control-label">Медиафайлы (необязательно)</label>
+                <div class="custom-file">
+                    <input type="file" class="form-control" id="mediaFiles_@Model.comment.Id" name="mediaFiles" multiple
+                           accept=".jpeg,.jpg,.png,.gif,.mp4,.webm"
+                           onchange="handleFileSelect(event, @Model.comment.Id)" />
+                    <small class="form-text text-muted">
+                        Максимум 4 файла, общим размером до 50 МБ.<br />
+                        Поддерживаемые форматы: JPEG, PNG, GIF, MP4, WEBM
+                    </small>
+                </div>
+                <div id="mediaPreview_@Model.comment.Id" class="d-flex flex-wrap gap-2 mt-2"></div>
+            </div>
+
+            <div class="form-group mt-2">
+                <button type="submit" class="btn btn-primary btn-sm">Отправить</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="toggleReplyForm(@Model.comment.Id)">Отмена</button>
+            </div>
+        </form>
+    </div>
+
+    @* Дочерние комментарии *@
+    @if (Model.comment.ChildComments != null && Model.comment.ChildComments.Any())
+    {
+        <div class="child-comments mt-3 ms-4 position-relative">
+            <div class="comment-thread-line"></div>
+            @foreach (var childComment in Model.comment.ChildComments.OrderBy(c => c.CreatedAt))
+            {
+                <partial name="_CommentPartial" model="(childComment, 
+                         Model.hasUserLiked,
+                         Model.hasUserComplained,
+                         Model.userFingerprintId)" />
+            }
+        </div>
+    }
+</div>
+
+<style>
+    .comment {
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .child-comments {
+        border-left: 2px solid #dee2e6;
+        padding-left: 1rem;
+    }
+
+    .comment-thread-line {
+        position: absolute;
+        left: -1px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background-color: #dee2e6;
+    }
+
+    .media-file {
+        position: relative;
+        overflow: hidden;
+        border-radius: 4px;
+    }
+
+    .media-file img, .media-file video {
+        transition: transform 0.2s;
+        object-fit: cover;
+    }
+
+    .media-file:hover img, .media-file:hover video {
+        transform: scale(1.05);
+    }
+
+    .video-container {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #000;
+    }
+
+    .video-container video {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
+</style> 

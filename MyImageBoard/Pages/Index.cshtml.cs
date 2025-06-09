@@ -1,20 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace MyImageBoard.Pages
+namespace ForumProject.Pages
 {
     public class IndexModel : PageModel
     {
-        private readonly ILogger<IndexModel> _logger;
-
-        public IndexModel(ILogger<IndexModel> logger)
+        public IActionResult OnGet()
         {
-            _logger = logger;
-        }
-
-        public void OnGet()
-        {
-
+            return RedirectToPage("/Boards/Index"); // Перенаправляем на страницу списка досок
         }
     }
 }

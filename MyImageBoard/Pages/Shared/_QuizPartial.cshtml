@@ -1,0 +1,134 @@
+@model ForumProject.Data.Models.Quiz
+
+<div class="quiz-container mb-3" data-quiz-id="@Model.Id">
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">@Model.Question</h5>
+            <form class="quiz-form">
+                <input type="hidden" name="quizId" value="@Model.Id" />
+                @foreach (var option in Model.Options)
+                {
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="@(Model.IsMultiple ? "checkbox" : "radio")"
+                               name="optionIds" value="@option.Id" id="option-@option.Id">
+                        <label class="form-check-label" for="option-@option.Id">
+                            @option.Text
+                        </label>
+                        <div class="d-flex align-items-center mt-1">
+                            <div class="progress flex-grow-1" style="height: 4px;">
+                                @{
+                                    var totalVotes = Model.Options.Sum(o => o.VotesCount);
+                                    var percentage = totalVotes > 0 ? (option.VotesCount * 100.0 / totalVotes) : 0;
+                                }
+                                <div class="progress-bar" role="progressbar" style="width: @percentage%"></div>
+                            </div>
+                            <span class="votes-count ms-2">(@option.VotesCount голосов)</span>
+                        </div>
+                    </div>
+                }
+                <button type="submit" class="btn btn-primary mt-2">Голосовать</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        const quizContainer = document.querySelector('[data-quiz-id="@Model.Id"]');
+        const form = quizContainer.querySelector('.quiz-form');
+        const inputs = form.querySelectorAll('input[type="checkbox"], input[type="radio"]');
+        const submitButton = form.querySelector('button[type="submit"]');
+
+        // Проверяем, голосовал ли пользователь
+        try {
+            const response = await fetch(`/api/Quiz/HasVoted/@Model.Id`);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const data = await response.json();
+            
+            if (data.hasVoted) {
+                // Если пользователь уже голосовал, блокируем форму
+                inputs.forEach(input => input.disabled = true);
+                submitButton.disabled = true;
+                submitButton.textContent = 'Вы уже проголосовали';
+            }
+        } catch (error) {
+            console.error('Error checking vote status:', error);
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(form);
+            const optionIds = Array.from(formData.getAll('optionIds')).map(Number);
+
+            if (optionIds.length === 0) {
+                alert('Пожалуйста, выберите вариант ответа');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/Quiz/Vote', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        optionIds: optionIds
+                    })
+                });
+
+                if (!response.ok) {
+                    const error = await response.text();
+                    throw new Error(error);
+                }
+
+                // Блокируем форму после успешного голосования
+                inputs.forEach(input => input.disabled = true);
+                submitButton.disabled = true;
+                submitButton.textContent = 'Вы проголосовали';
+
+                // Перезагружаем страницу для обновления результатов
+                setTimeout(() => window.location.reload(), 1000);
+            } catch (error) {
+                console.error('Error submitting vote:', error);
+                alert('Произошла ошибка при голосовании. Пожалуйста, попробуйте еще раз.');
+            }
+        });
+    });
+</script>
+
+<style>
+    .quiz-container {
+        background-color: #f8f9fa;
+    }
+
+    .quiz-options .form-check {
+        padding: 10px;
+        border-radius: 5px;
+        transition: background-color 0.2s;
+    }
+
+    .quiz-options .form-check:hover {
+        background-color: #e9ecef;
+    }
+
+    .progress {
+        background-color: #e9ecef;
+    }
+
+    .progress-bar {
+        background-color: #007bff;
+    }
+
+    /* Стили для заблокированных элементов */
+    .form-check-input:disabled + .form-check-label {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+
+    button:disabled {
+        cursor: not-allowed;
+    }
+</style> 

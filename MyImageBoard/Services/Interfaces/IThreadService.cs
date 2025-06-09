@@ -1,16 +1,16 @@
-using MyImageBoard.Models;
+﻿using ForumProject.Data.Models;
+using Microsoft.AspNetCore.Http;
 
-namespace MyImageBoard.Services.Interfaces;
-
-public interface IThreadService
+namespace ForumProject.Services.Interfaces
 {
-    Task<IEnumerable<ForumThread>> GetThreadsByBoardAsync(int boardId, int page = 1, int pageSize = 10);
-    Task<ForumThread> GetThreadByIdAsync(int id);
-    Task<ForumThread> CreateThreadAsync(ForumThread thread, int userId);
-    Task<ForumThread> UpdateThreadAsync(ForumThread thread);
-    Task DeleteThreadAsync(int id, int userId);
-    Task<bool> IsThreadOwnerAsync(int threadId, int userId);
-    Task<bool> CanUserModerateThreadAsync(int threadId, int userId);
-    Task<IEnumerable<Post>> GetThreadPostsAsync(int threadId, int page = 1, int pageSize = 20);
-    Task<int> GetThreadPostsCountAsync(int threadId);
-} 
+    public interface IThreadService
+    {
+        Task<SiteThread?> GetThreadByIdAsync(int id);
+        Task<IEnumerable<SiteThread>> GetAllThreadsAsync();
+        Task<(SiteThread? thread, string? errorMessage)> CreateThreadAsync(SiteThread thread, IFormFileCollection? files = null);
+        Task<bool> UpdateThreadAsync(SiteThread thread);
+        Task<bool> DeleteThreadAsync(int id); // Hard delete
+        Task<bool> AddViewsCountAsync(int id); // Для увеличения счетчика просмотров
+        // Добавим методы для обработки жалоб и медиа, когда дойдем до них
+    }
+}
