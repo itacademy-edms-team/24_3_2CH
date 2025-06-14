@@ -3,6 +3,7 @@ using ForumProject.Data.Models;
 using ForumProject.Services.Interfaces;
 using Microsoft.EntityFrameworkCore; // Не забудь добавить этот using!
 using Microsoft.AspNetCore.Http;
+using System.Linq;
 
 namespace ForumProject.Services
 {
@@ -250,6 +251,48 @@ namespace ForumProject.Services
             // _context.Entry(thread).State = EntityState.Modified; // Не обязательно, если объект уже отслеживается
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<List<ForumProject.Pages.Threads.SearchModel.ThreadSearchResult>> SearchThreadsAsync(ForumProject.Pages.Threads.SearchModel.ThreadSearchFilter filter)
+        {
+            var query = _context.Threads.AsQueryable();
+
+            if (filter.CreatedFrom.HasValue)
+                query = query.Where(t => t.CreatedAt >= filter.CreatedFrom.Value);
+            if (filter.CreatedTo.HasValue)
+                query = query.Where(t => t.CreatedAt <= filter.CreatedTo.Value);
+            if (!string.IsNullOrWhiteSpace(filter.Title))
+                query = query.Where(t => t.Title.Contains(filter.Title));
+            if (!string.IsNullOrWhiteSpace(filter.Content))
+                query = query.Where(t => t.Content.Contains(filter.Content));
+            if (!string.IsNullOrWhiteSpace(filter.Tripcode))
+                query = query.Where(t => t.Tripcode.Contains(filter.Tripcode));
+
+            // Считаем количество комментариев для каждого треда
+            var threads = await query
+                .Select(t => new {
+                    t.Id,
+                    t.Title,
+                    t.CreatedAt,
+                    t.Tripcode,
+                    CommentsCount = t.Comments.Count
+                })
+                .ToListAsync();
+
+            // Фильтрация по количеству комментариев (после выборки, т.к. Comments.Count не всегда корректно работает в SQL)
+            if (filter.CommentsFrom.HasValue)
+                threads = threads.Where(t => t.CommentsCount >= filter.CommentsFrom.Value).ToList();
+            if (filter.CommentsTo.HasValue)
+                threads = threads.Where(t => t.CommentsCount <= filter.CommentsTo.Value).ToList();
+
+            return threads.Select(t => new ForumProject.Pages.Threads.SearchModel.ThreadSearchResult
+            {
+                Id = t.Id,
+                Title = t.Title,
+                CreatedAt = t.CreatedAt,
+                CommentsCount = t.CommentsCount,
+                Tripcode = t.Tripcode
+            }).ToList();
         }
     }
 }

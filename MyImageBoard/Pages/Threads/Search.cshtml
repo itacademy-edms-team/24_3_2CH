@@ -1,0 +1,62 @@
+@page
+@model ForumProject.Pages.Threads.SearchModel
+@{
+    ViewData["Title"] = "Поиск тредов";
+}
+<h2>Поиск тредов</h2>
+<form method="get">
+    <div>
+        <label>Дата создания (от):</label>
+        <input type="date" name="CreatedFrom" value="@Model.Filter.CreatedFrom?.ToString("yyyy-MM-dd")" />
+        <label>Дата создания (до):</label>
+        <input type="date" name="CreatedTo" value="@Model.Filter.CreatedTo?.ToString("yyyy-MM-dd")" />
+    </div>
+    <div>
+        <label>Количество комментариев (от):</label>
+        <input type="number" name="CommentsFrom" value="@Model.Filter.CommentsFrom" min="0" />
+        <label>Количество комментариев (до):</label>
+        <input type="number" name="CommentsTo" value="@Model.Filter.CommentsTo" min="0" />
+    </div>
+    <div>
+        <label>Заголовок:</label>
+        <input type="text" name="Title" value="@Model.Filter.Title" />
+    </div>
+    <div>
+        <label>Текст ОП-поста:</label>
+        <input type="text" name="Content" value="@Model.Filter.Content" />
+    </div>
+    <div>
+        <label>Трипкод:</label>
+        <input type="text" name="Tripcode" value="@Model.Filter.Tripcode" />
+    </div>
+    <button type="submit">Искать</button>
+</form>
+@if (Model.Results != null)
+{
+    <h3>Результаты поиска</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Заголовок</th>
+                <th>Дата создания</th>
+                <th>Комментарии</th>
+                <th>Трипкод</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var thread in Model.Results)
+        {
+            <tr>
+                <td>@thread.Id</td>
+                <td>@thread.Title</td>
+                <td>@thread.CreatedAt.ToString("g")</td>
+                <td>@thread.CommentsCount</td>
+                <td>@thread.Tripcode</td>
+                <td><a href="/Threads/Details/@thread.Id">Открыть</a></td>
+            </tr>
+        }
+        </tbody>
+    </table>
+} 

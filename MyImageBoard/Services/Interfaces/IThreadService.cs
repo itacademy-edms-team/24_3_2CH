@@ -11,6 +11,7 @@ namespace ForumProject.Services.Interfaces
         Task<bool> UpdateThreadAsync(SiteThread thread);
         Task<bool> DeleteThreadAsync(int id); // Hard delete
         Task<bool> AddViewsCountAsync(int id); // Для увеличения счетчика просмотров
+        Task<List<ForumProject.Pages.Threads.SearchModel.ThreadSearchResult>> SearchThreadsAsync(ForumProject.Pages.Threads.SearchModel.ThreadSearchFilter filter);
         // Добавим методы для обработки жалоб и медиа, когда дойдем до них
     }
 }
