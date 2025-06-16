@@ -1,4 +1,4 @@
-@model (ForumProject.Data.Models.Comment comment, bool hasUserLiked, bool hasUserComplained, int userFingerprintId)
+@model (ForumProject.Data.Models.Comment comment, bool hasUserLiked, bool hasUserComplained, int userFingerprintId, System.Collections.Generic.Dictionary<int, bool> hasUserLikedComments, System.Collections.Generic.Dictionary<int, bool> hasUserComplainedComments)
 
 <div class="comment mb-3 p-3 border rounded position-relative" id="comment_@Model.comment.Id">
     <div class="comment-content">
@@ -115,9 +115,11 @@
             @foreach (var childComment in Model.comment.ChildComments.OrderBy(c => c.CreatedAt))
             {
                 <partial name="_CommentPartial" model="(childComment, 
-                         Model.hasUserLiked,
-                         Model.hasUserComplained,
-                         Model.userFingerprintId)" />
+                         Model.hasUserLikedComments.GetValueOrDefault(childComment.Id),
+                         Model.hasUserComplainedComments.GetValueOrDefault(childComment.Id),
+                         Model.userFingerprintId,
+                         Model.hasUserLikedComments,
+                         Model.hasUserComplainedComments)" />
             }
         </div>
     }
