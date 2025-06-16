@@ -35,6 +35,7 @@ namespace ForumProject.Pages.Threads
             public string Title { get; set; }
             public string Content { get; set; }
             public string Tripcode { get; set; }
+            public string Tag { get; set; }
         }
         public class ThreadSearchResult
         {
@@ -43,6 +44,7 @@ namespace ForumProject.Pages.Threads
             public DateTime CreatedAt { get; set; }
             public int CommentsCount { get; set; }
             public string Tripcode { get; set; }
+            public string Tags { get; set; }
         }
     }
 } 

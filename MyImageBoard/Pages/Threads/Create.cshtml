@@ -31,6 +31,12 @@
                 <small class="form-text text-muted">Формат: username#password. Пример: Anon#secretpass</small>
                 <span asp-validation-for="Thread.Tripcode" class="text-danger"></span>
             </div>
+            <div class="form-group mb-3">
+                <label asp-for="Thread.Tags" class="control-label">Теги (через запятую)</label>
+                <input asp-for="Thread.Tags" class="form-control" placeholder="аниме,wallpaper,art" />
+                <small class="form-text text-muted">Введите несколько тегов через запятую, например: аниме,wallpaper,art</small>
+                <span asp-validation-for="Thread.Tags" class="text-danger"></span>
+            </div>
 
             <div class="form-group mb-3">
                 <button type="button" class="btn btn-outline-primary" onclick="showCreateQuizModal()">

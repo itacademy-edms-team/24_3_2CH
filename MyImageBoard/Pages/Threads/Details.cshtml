@@ -18,6 +18,16 @@
 else
 {
     <h1>@Model.Thread.Title</h1>
+    @if (!string.IsNullOrWhiteSpace(Model.Thread.Tags))
+    {
+        <div class="mb-2">
+            <span class="badge bg-info text-dark">Теги:</span>
+            @foreach (var tag in Model.Thread.Tags.Split(',', System.StringSplitOptions.RemoveEmptyEntries))
+            {
+                <span class="badge bg-secondary mx-1">@tag.Trim()</span>
+            }
+        </div>
+    }
     <div class="thread-info mb-2">
         <span class="author">Автор: @(string.IsNullOrEmpty(Model.Thread.Tripcode) ? "Аноним" : Model.Thread.Tripcode)</span>
         <span class="text-muted ms-2">@Model.Thread.CreatedAt.ToShortDateString()</span>

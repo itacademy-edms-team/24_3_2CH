@@ -29,6 +29,10 @@
         <label>Трипкод:</label>
         <input type="text" name="Tripcode" value="@Model.Filter.Tripcode" />
     </div>
+    <div>
+        <label>Тег:</label>
+        <input type="text" name="Tag" value="@Model.Filter.Tag" placeholder="аниме" />
+    </div>
     <button type="submit">Искать</button>
 </form>
 @if (Model.Results != null)
@@ -42,6 +46,7 @@
                 <th>Дата создания</th>
                 <th>Комментарии</th>
                 <th>Трипкод</th>
+                <th>Теги</th>
                 <th></th>
             </tr>
         </thead>
@@ -54,6 +59,15 @@
                 <td>@thread.CreatedAt.ToString("g")</td>
                 <td>@thread.CommentsCount</td>
                 <td>@thread.Tripcode</td>
+                <td>
+                    @if (!string.IsNullOrWhiteSpace(thread.Tags))
+                    {
+                        foreach (var tag in thread.Tags.Split(',', System.StringSplitOptions.RemoveEmptyEntries))
+                        {
+                            <span class="badge bg-secondary mx-1">@tag.Trim()</span>
+                        }
+                    }
+                </td>
                 <td><a href="/Threads/Details/@thread.Id">Открыть</a></td>
             </tr>
         }

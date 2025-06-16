@@ -37,6 +37,10 @@ namespace ForumProject.Data.Models
         public ICollection<Complaint> Complaints { get; set; } = new List<Complaint>();
         public ICollection<Quiz> Quizzes { get; set; } = new List<Quiz>(); // Для опросов, если они будут частью треда
 
-
+        /// <summary>
+        /// Теги треда, разделённые запятой (например: "аниме,wallpaper,art")
+        /// </summary>
+        [MaxLength(256)]
+        public string? Tags { get; set; }
     }
 }

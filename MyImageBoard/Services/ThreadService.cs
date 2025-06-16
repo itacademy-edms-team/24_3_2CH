@@ -267,6 +267,8 @@ namespace ForumProject.Services
                 query = query.Where(t => t.Content.Contains(filter.Content));
             if (!string.IsNullOrWhiteSpace(filter.Tripcode))
                 query = query.Where(t => t.Tripcode.Contains(filter.Tripcode));
+            if (!string.IsNullOrWhiteSpace(filter.Tag))
+                query = query.Where(t => t.Tags != null && t.Tags.Contains(filter.Tag));
 
             // Считаем количество комментариев для каждого треда
             var threads = await query
@@ -275,6 +277,7 @@ namespace ForumProject.Services
                     t.Title,
                     t.CreatedAt,
                     t.Tripcode,
+                    t.Tags,
                     CommentsCount = t.Comments.Count
                 })
                 .ToListAsync();
@@ -291,7 +294,8 @@ namespace ForumProject.Services
                 Title = t.Title,
                 CreatedAt = t.CreatedAt,
                 CommentsCount = t.CommentsCount,
-                Tripcode = t.Tripcode
+                Tripcode = t.Tripcode,
+                Tags = t.Tags
             }).ToList();
         }
     }
