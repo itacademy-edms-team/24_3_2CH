@@ -38,12 +38,82 @@ namespace ForumProject.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Отключаем каскадное удаление для всех связей
+            // Отключаем каскадное удаление для всех связей по умолчанию
             foreach (var relationship in modelBuilder.Model.GetEntityTypes()
                 .SelectMany(e => e.GetForeignKeys()))
             {
                 relationship.DeleteBehavior = DeleteBehavior.NoAction;
             }
+
+            // Настраиваем каскадное удаление для комментариев
+            modelBuilder.Entity<Comment>()
+                .HasOne(c => c.ParentComment)
+                .WithMany(c => c.ChildComments)
+                .HasForeignKey(c => c.ParentCommentId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // Настраиваем каскадное удаление для зависимостей комментариев
+            modelBuilder.Entity<Like>()
+                .HasOne(l => l.Comment)
+                .WithMany(c => c.Likes)
+                .HasForeignKey(l => l.CommentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Complaint>()
+                .HasOne(c => c.Comment)
+                .WithMany(comment => comment.Complaints)
+                .HasForeignKey(c => c.CommentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<MediaFile>()
+                .HasOne(m => m.Comment)
+                .WithMany(c => c.MediaFiles)
+                .HasForeignKey(m => m.CommentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Настраиваем каскадное удаление для зависимостей тредов
+            modelBuilder.Entity<Comment>()
+                .HasOne(c => c.Thread)
+                .WithMany(t => t.Comments)
+                .HasForeignKey(c => c.ThreadId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Like>()
+                .HasOne(l => l.Thread)
+                .WithMany(t => t.Likes)
+                .HasForeignKey(l => l.ThreadId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Complaint>()
+                .HasOne(c => c.Thread)
+                .WithMany(t => t.Complaints)
+                .HasForeignKey(c => c.ThreadId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<MediaFile>()
+                .HasOne(m => m.Thread)
+                .WithMany(t => t.MediaFiles)
+                .HasForeignKey(m => m.ThreadId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Настраиваем каскадное удаление для опросов
+            modelBuilder.Entity<Quiz>()
+                .HasOne(q => q.Thread)
+                .WithMany(t => t.Quizzes)
+                .HasForeignKey(q => q.ThreadId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<QuizOption>()
+                .HasOne(o => o.Quiz)
+                .WithMany(q => q.Options)
+                .HasForeignKey(o => o.QuizId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<QuizVote>()
+                .HasOne(v => v.QuizOption)
+                .WithMany(o => o.Votes)
+                .HasForeignKey(v => v.QuizOptionId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // Убеждаемся, что MediaFile привязан только к одному
             modelBuilder.Entity<MediaFile>()

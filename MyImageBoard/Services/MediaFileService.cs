@@ -141,21 +141,49 @@ namespace ForumProject.Services
             }
         }
 
-        public async Task<bool> DeleteFileAsync(string filePath)
+        public async Task<bool> DeleteFileAsync(string fileName)
         {
             try
             {
-                var fullPath = Path.Combine(_environment.WebRootPath, filePath);
-                if (File.Exists(fullPath))
+                var filePath = Path.Combine(_environment.WebRootPath, fileName);
+                if (File.Exists(filePath))
                 {
-                    File.Delete(fullPath);
+                    File.Delete(filePath);
+                    return true;
                 }
-                return true;
-            }
-            catch
-            {
                 return false;
             }
+            catch (Exception ex)
+            {
+                // Логируем ошибку, но не прерываем процесс
+                System.Diagnostics.Debug.WriteLine($"Error deleting file {fileName}: {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Удаляет медиафайлы для указанного треда или комментария
+        /// </summary>
+        public async Task DeleteMediaFilesAsync(int? threadId = null, int? commentId = null)
+        {
+            if (!threadId.HasValue && !commentId.HasValue)
+                return;
+
+            var query = _context.MediaFiles.AsQueryable();
+            
+            if (threadId.HasValue)
+                query = query.Where(m => m.ThreadId == threadId.Value);
+            else if (commentId.HasValue)
+                query = query.Where(m => m.CommentId == commentId.Value);
+
+            var mediaFiles = await query.ToListAsync();
+
+            foreach (var mediaFile in mediaFiles)
+            {
+                await DeleteFileAsync(mediaFile.FileName);
+            }
+
+            _context.MediaFiles.RemoveRange(mediaFiles);
         }
     }
 } 
