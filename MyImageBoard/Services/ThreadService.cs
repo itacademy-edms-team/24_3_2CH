@@ -176,8 +176,14 @@ namespace ForumProject.Services
                 // 2. Удаляем комментарии через CommentService
                 foreach (var comment in comments)
                 {
-                    // Передаем false, чтобы не сохранять изменения после каждого комментария
-                    await _commentService.DeleteCommentAsync(comment.Id, false);
+                    // Передаем false, чтобы НЕ сохранять изменения после каждого комментария
+                    // Все изменения будут сохранены в конце одной транзакцией
+                    var commentDeleted = await _commentService.DeleteCommentAsync(comment.Id, false);
+                    if (!commentDeleted)
+                    {
+                        await transaction.RollbackAsync();
+                        return false;
+                    }
                 }
 
                 // 3. Загружаем тред с оставшимися зависимостями
@@ -192,6 +198,7 @@ namespace ForumProject.Services
 
                 if (threadToDelete == null)
                 {
+                    await transaction.RollbackAsync();
                     return false;
                 }
 
@@ -241,9 +248,11 @@ namespace ForumProject.Services
                 await transaction.CommitAsync();
                 return true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 await transaction.RollbackAsync();
+                // Логируем ошибку для отладки
+                System.Diagnostics.Debug.WriteLine($"Error deleting thread {id}: {ex.Message}");
                 throw;
             }
         }

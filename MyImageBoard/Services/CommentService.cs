@@ -86,17 +86,45 @@ namespace ForumProject.Services
 
         public async Task<bool> DeleteCommentAsync(int id, bool saveChanges = true)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            // Если saveChanges = false, не создаем транзакцию - она будет управляться извне
+            if (saveChanges)
+            {
+                using var transaction = await _context.Database.BeginTransactionAsync();
+                try
+                {
+                    var result = await DeleteCommentInternalAsync(id);
+                    if (result)
+                    {
+                        await _context.SaveChangesAsync();
+                        await transaction.CommitAsync();
+                    }
+                    else
+                    {
+                        await transaction.RollbackAsync();
+                    }
+                    return result;
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    // Логируем ошибку для отладки
+                    System.Diagnostics.Debug.WriteLine($"Error deleting comment {id}: {ex.Message}");
+                    throw;
+                }
+            }
+            else
+            {
+                // Если saveChanges = false, просто выполняем удаление без транзакции
+                return await DeleteCommentInternalAsync(id);
+            }
+        }
+
+        private async Task<bool> DeleteCommentInternalAsync(int id)
+        {
             try
             {
                 // 1. Загружаем комментарий со всеми зависимостями
                 var commentToDelete = await _context.Comments
-                    .Include(c => c.ChildComments) // Загружаем дочерние комментарии для рекурсивного удаления
-                        .ThenInclude(cc => cc.Likes)
-                    .Include(c => c.ChildComments) // Загружаем дочерние комментарии для рекурсивного удаления
-                        .ThenInclude(cc => cc.Complaints)
-                    .Include(c => c.ChildComments) // Загружаем дочерние комментарии для рекурсивного удаления
-                        .ThenInclude(cc => cc.MediaFiles)
                     .Include(c => c.Likes)
                     .Include(c => c.Complaints)
                     .Include(c => c.MediaFiles)
@@ -107,32 +135,8 @@ namespace ForumProject.Services
                     return false;
                 }
 
-                // 2. Рекурсивно удаляем дочерние комментарии
-                if (commentToDelete.ChildComments != null && commentToDelete.ChildComments.Any())
-                {
-                    foreach (var childComment in commentToDelete.ChildComments.ToList())
-                    {
-                        // Сначала удаляем все зависимости дочернего комментария
-                        if (childComment.Likes != null)
-                        {
-                            _context.Likes.RemoveRange(childComment.Likes);
-                        }
-                        if (childComment.Complaints != null)
-                        {
-                            _context.Complaints.RemoveRange(childComment.Complaints);
-                        }
-                        if (childComment.MediaFiles != null)
-                        {
-                            foreach (var mediaFile in childComment.MediaFiles)
-                            {
-                                await _mediaFileService.DeleteFileAsync(mediaFile.FileName);
-                            }
-                            _context.MediaFiles.RemoveRange(childComment.MediaFiles);
-                        }
-                        // Теперь удаляем сам дочерний комментарий
-                        _context.Comments.Remove(childComment);
-                    }
-                }
+                // 2. Рекурсивно удаляем все дочерние комментарии
+                await DeleteCommentRecursivelyAsync(commentToDelete.Id);
 
                 // 3. Удаляем зависимости текущего комментария
                 if (commentToDelete.Likes != null)
@@ -157,19 +161,51 @@ namespace ForumProject.Services
                 // 4. Удаляем сам комментарий
                 _context.Comments.Remove(commentToDelete);
 
-                // 5. Сохраняем все изменения в одной транзакции
-                if (saveChanges)
-                {
-                    await _context.SaveChangesAsync();
-                }
-
-                await transaction.CommitAsync();
                 return true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                await transaction.RollbackAsync();
+                // Логируем ошибку для отладки
+                System.Diagnostics.Debug.WriteLine($"Error in DeleteCommentInternalAsync for comment {id}: {ex.Message}");
                 throw;
+            }
+        }
+
+        private async Task DeleteCommentRecursivelyAsync(int commentId)
+        {
+            // Загружаем все дочерние комментарии для данного комментария
+            var childComments = await _context.Comments
+                .Include(c => c.Likes)
+                .Include(c => c.Complaints)
+                .Include(c => c.MediaFiles)
+                .Where(c => c.ParentCommentId == commentId)
+                .ToListAsync();
+
+            foreach (var childComment in childComments)
+            {
+                // Рекурсивно удаляем дочерние комментарии этого дочернего комментария
+                await DeleteCommentRecursivelyAsync(childComment.Id);
+
+                // Удаляем зависимости дочернего комментария
+                if (childComment.Likes != null)
+                {
+                    _context.Likes.RemoveRange(childComment.Likes);
+                }
+                if (childComment.Complaints != null)
+                {
+                    _context.Complaints.RemoveRange(childComment.Complaints);
+                }
+                if (childComment.MediaFiles != null)
+                {
+                    foreach (var mediaFile in childComment.MediaFiles)
+                    {
+                        await _mediaFileService.DeleteFileAsync(mediaFile.FileName);
+                    }
+                    _context.MediaFiles.RemoveRange(childComment.MediaFiles);
+                }
+
+                // Удаляем сам дочерний комментарий
+                _context.Comments.Remove(childComment);
             }
         }
     }

@@ -143,16 +143,17 @@ namespace ForumProject.Pages.AdminPanel
                 var success = await _threadService.DeleteThreadAsync(threadId);
                 if (!success)
                 {
-                    ErrorMessage = "Thread not found.";
+                    ErrorMessage = $"Thread with ID {threadId} not found or could not be deleted.";
                     return RedirectToPage();
                 }
 
-                SuccessMessage = "Thread deleted successfully.";
+                SuccessMessage = $"Thread with ID {threadId} deleted successfully.";
                 return RedirectToPage();
             }
             catch (Exception ex)
             {
-                ErrorMessage = $"Error deleting thread: {ex.Message}";
+                ErrorMessage = $"Error deleting thread {threadId}: {ex.Message}";
+                System.Diagnostics.Debug.WriteLine($"Admin panel error deleting thread {threadId}: {ex}");
                 return RedirectToPage();
             }
         }
@@ -163,15 +164,24 @@ namespace ForumProject.Pages.AdminPanel
             if (!currentUserId.HasValue || !await _superUserService.HasPermissionAsync(currentUserId.Value, "DeleteComment"))
                 return Forbid();
 
-            var success = await _commentService.DeleteCommentAsync(commentId);
-            if (!success)
+            try
             {
-                ErrorMessage = "Comment not found.";
+                var success = await _commentService.DeleteCommentAsync(commentId);
+                if (!success)
+                {
+                    ErrorMessage = $"Comment with ID {commentId} not found or could not be deleted.";
+                    return RedirectToPage();
+                }
+
+                SuccessMessage = $"Comment with ID {commentId} deleted successfully.";
                 return RedirectToPage();
             }
-
-            SuccessMessage = "Comment deleted successfully.";
-            return RedirectToPage();
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error deleting comment {commentId}: {ex.Message}";
+                System.Diagnostics.Debug.WriteLine($"Admin panel error deleting comment {commentId}: {ex}");
+                return RedirectToPage();
+            }
         }
 
         public async Task<IActionResult> OnPostDeleteComplaintAsync(int complaintId)
@@ -274,20 +284,20 @@ namespace ForumProject.Pages.AdminPanel
             Threads = await _context.Threads
                 .Include(t => t.Board)
                 .OrderByDescending(t => t.CreatedAt)
-                .Take(50)
+                .Take(200)
                 .ToListAsync();
 
             Comments = await _context.Comments
                 .Include(c => c.Thread)
                 .OrderByDescending(c => c.CreatedAt)
-                .Take(50)
+                .Take(200)
                 .ToListAsync();
 
             Complaints = await _context.Complaints
                 .Include(c => c.Thread)
                 .Include(c => c.Comment)
                 .OrderByDescending(c => c.CreatedAt)
-                .Take(50)
+                .Take(200)
                 .ToListAsync();
 
             Boards = await _context.Boards
