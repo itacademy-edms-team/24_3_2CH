@@ -28,34 +28,42 @@ namespace ForumProject.Services
 
         public async Task<SiteThread?> GetThreadByIdAsync(int id)
         {
-            // Загружаем тред вместе с его медиафайлами, комментариями, лайками и опросами
-            // Используем AsNoTracking() для операций чтения, это оптимизация производительности
-            return await _context.Threads
+            // Загружаем тред с базовой информацией
+            var thread = await _context.Threads
                 .Include(t => t.MediaFiles)
                 .Include(t => t.Likes)
-                .Include(t => t.Comments) // Загружаем ВСЕ комментарии треда
-                    .ThenInclude(c => c.MediaFiles)
-                .Include(t => t.Comments)
-                    .ThenInclude(c => c.Likes)
-                .Include(t => t.Comments)
-                    .ThenInclude(c => c.ChildComments)
-                        .ThenInclude(cc => cc.MediaFiles)
-                .Include(t => t.Comments)
-                    .ThenInclude(c => c.ChildComments)
-                        .ThenInclude(cc => cc.Likes)
-                .Include(t => t.Comments)
-                    .ThenInclude(c => c.ChildComments)
-                        .ThenInclude(cc => cc.ChildComments)
-                            .ThenInclude(ccc => ccc.MediaFiles)
-                .Include(t => t.Comments)
-                    .ThenInclude(c => c.ChildComments)
-                        .ThenInclude(cc => cc.ChildComments)
-                            .ThenInclude(ccc => ccc.Likes)
                 .Include(t => t.Quizzes)
                     .ThenInclude(q => q.Options)
                         .ThenInclude(qo => qo.Votes)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(t => t.Id == id);
+
+            if (thread == null)
+                return null;
+
+            // Рекурсивно загружаем все комментарии с полной вложенностью
+            thread.Comments = await LoadCommentsRecursivelyAsync(id);
+
+            return thread;
+        }
+
+        private async Task<ICollection<Comment>> LoadCommentsRecursivelyAsync(int threadId, int? parentCommentId = null)
+        {
+            var comments = await _context.Comments
+                .Include(c => c.MediaFiles)
+                .Include(c => c.Likes)
+                .Where(c => c.ThreadId == threadId && c.ParentCommentId == parentCommentId)
+                .OrderBy(c => c.CreatedAt)
+                .AsNoTracking()
+                .ToListAsync();
+
+            // Рекурсивно загружаем дочерние комментарии для каждого комментария
+            foreach (var comment in comments)
+            {
+                comment.ChildComments = await LoadCommentsRecursivelyAsync(threadId, comment.Id);
+            }
+
+            return comments;
         }
 
         public async Task<IEnumerable<SiteThread>> GetAllThreadsAsync()

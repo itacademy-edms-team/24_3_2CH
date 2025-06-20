@@ -67,19 +67,31 @@ namespace ForumProject.Pages.Threads
             HasCurrentUserLikedThread = await _likeService.HasUserLikedAsync(CurrentUserFingerprintId, Thread.Id, null);
             HasCurrentUserComplainedThread = await _complaintService.HasUserComplainedAsync(CurrentUserFingerprintId, Thread.Id, null);
 
+            // Рекурсивно обрабатываем все комментарии для проверки лайков и жалоб
             if (Thread.Comments != null)
             {
-                foreach (var comment in Thread.Comments)
-                {
-                    HasCurrentUserLikedComments[comment.Id] = await _likeService.HasUserLikedAsync(CurrentUserFingerprintId, 0, comment.Id);
-                    HasCurrentUserComplainedComments[comment.Id] = await _complaintService.HasUserComplainedAsync(CurrentUserFingerprintId, null, comment.Id);
-                }
+                await ProcessCommentsRecursivelyAsync(Thread.Comments);
             }
 
             ViewData["BoardId"] = Thread.BoardId;
             TempData["BoardId"] = Thread.BoardId; // Сохраняем для случаев редиректа
 
             return Page();
+        }
+
+        private async Task ProcessCommentsRecursivelyAsync(ICollection<Comment> comments)
+        {
+            foreach (var comment in comments)
+            {
+                HasCurrentUserLikedComments[comment.Id] = await _likeService.HasUserLikedAsync(CurrentUserFingerprintId, 0, comment.Id);
+                HasCurrentUserComplainedComments[comment.Id] = await _complaintService.HasUserComplainedAsync(CurrentUserFingerprintId, null, comment.Id);
+
+                // Рекурсивно обрабатываем дочерние комментарии
+                if (comment.ChildComments != null && comment.ChildComments.Any())
+                {
+                    await ProcessCommentsRecursivelyAsync(comment.ChildComments);
+                }
+            }
         }
 
         public async Task<IActionResult> OnPostAddCommentAsync()
