@@ -10,8 +10,8 @@ namespace ForumProject.Pages.Threads
     {
         private readonly IThreadService _threadService;
         private readonly ICommentService _commentService;
-        private readonly ILikeService _likeService; // ���������
-        private readonly IUserFingerprintService _userFingerprintService; // ���������
+        private readonly ILikeService _likeService; 
+        private readonly IUserFingerprintService _userFingerprintService; 
         private readonly IComplaintService _complaintService;
         private readonly IMediaFileService _mediaFileService;
 

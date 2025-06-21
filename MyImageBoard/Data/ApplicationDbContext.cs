@@ -63,7 +63,7 @@ namespace ForumProject.Data
                 .HasOne(c => c.Comment)
                 .WithMany(comment => comment.Complaints)
                 .HasForeignKey(c => c.CommentId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<MediaFile>()
                 .HasOne(m => m.Comment)

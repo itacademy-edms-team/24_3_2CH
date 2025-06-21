@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ForumProject.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250628201152_CascadeDelete")]
-    partial class CascadeDelete
+    [Migration("20250628211232_FixCascadeDeleteConstraints")]
+    partial class FixCascadeDeleteConstraints
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -596,7 +596,7 @@ namespace ForumProject.Migrations
                     b.HasOne("ForumProject.Data.Models.Comment", "Comment")
                         .WithMany("Complaints")
                         .HasForeignKey("CommentId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("ForumProject.Data.Models.UserFingerprint", "Fingerprint")
                         .WithMany()

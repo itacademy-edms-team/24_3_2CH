@@ -593,7 +593,7 @@ namespace ForumProject.Migrations
                     b.HasOne("ForumProject.Data.Models.Comment", "Comment")
                         .WithMany("Complaints")
                         .HasForeignKey("CommentId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("ForumProject.Data.Models.UserFingerprint", "Fingerprint")
                         .WithMany()
