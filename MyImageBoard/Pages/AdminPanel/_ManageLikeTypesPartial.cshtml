@@ -1,0 +1,166 @@
+@model List<ForumProject.Data.Models.LikeType>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Создание нового типа реакции</h5>
+    </div>
+    <div class="card-body">
+        <form method="post" asp-page-handler="CreateLikeType" accept-charset="UTF-8">
+            <div class="row">
+                <div class="col-md-2">
+                    <div class="mb-3">
+                        <label for="symbol" class="form-label">Символ (эмодзи)</label>
+                        <input type="text" class="form-control" id="symbol" name="symbol" required maxlength="10" placeholder="👍">
+                        <small class="form-text text-muted">Максимум 10 символов</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Название</label>
+                        <input type="text" class="form-control" id="name" name="name" required maxlength="50" placeholder="Like">
+                        <small class="form-text text-muted">Максимум 50 символов</small>
+                    </div>
+                </div>
+                <div class="col-md-5">
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Описание</label>
+                        <input type="text" class="form-control" id="description" name="description" maxlength="200" placeholder="Нравится">
+                        <small class="form-text text-muted">Максимум 200 символов</small>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="mb-3">
+                        <label class="form-label">&nbsp;</label>
+                        <button type="submit" class="btn btn-primary d-block w-100">Создать</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Существующие типы реакций</h5>
+    </div>
+    <div class="card-body">
+        @if (Model != null && Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Символ</th>
+                            <th>Название</th>
+                            <th>Описание</th>
+                            <th>Статус</th>
+                            <th>Создан</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var likeType in Model)
+                        {
+                            <tr>
+                                <td>@likeType.Id</td>
+                                <td>
+                                    <span class="fs-4">@likeType.Symbol</span>
+                                </td>
+                                <td>@likeType.Name</td>
+                                <td>@likeType.Description</td>
+                                <td>
+                                    @if (likeType.IsActive)
+                                    {
+                                        <span class="badge bg-success">Активен</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Неактивен</span>
+                                    }
+                                </td>
+                                <td>@likeType.CreatedAt.ToString("dd.MM.yyyy HH:mm")</td>
+                                <td>
+                                    <button type="button" class="btn btn-outline-primary btn-sm" 
+                                            onclick="editLikeType(@likeType.Id, '@likeType.Symbol', '@likeType.Name', '@likeType.Description', @likeType.IsActive.ToString().ToLower())">
+                                        <i class="fas fa-edit"></i> Изменить
+                                    </button>
+                                    <form method="post" asp-page-handler="DeleteLikeType" asp-route-id="@likeType.Id" 
+                                          class="d-inline" onsubmit="return confirm('Вы уверены, что хотите удалить этот тип реакции?');">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                                            <i class="fas fa-trash"></i> Удалить
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-info">
+                Нет типов реакций для отображения.
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Модальное окно для редактирования -->
+<div class="modal fade" id="editLikeTypeModal" tabindex="-1" aria-labelledby="editLikeTypeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editLikeTypeModalLabel">Редактировать тип реакции</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="UpdateLikeType" accept-charset="UTF-8">
+                <div class="modal-body">
+                    <input type="hidden" id="editLikeTypeId" name="id" />
+                    
+                    <div class="mb-3">
+                        <label for="editSymbol" class="form-label">Символ (эмодзи)</label>
+                        <input type="text" class="form-control" id="editSymbol" name="symbol" required maxlength="10">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editName" class="form-label">Название</label>
+                        <input type="text" class="form-control" id="editName" name="name" required maxlength="50">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editDescription" class="form-label">Описание</label>
+                        <input type="text" class="form-control" id="editDescription" name="description" maxlength="200">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="editIsActive" name="isActive" value="true">
+                            <label class="form-check-label" for="editIsActive">
+                                Активен
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function editLikeType(id, symbol, name, description, isActive) {
+        document.getElementById('editLikeTypeId').value = id;
+        document.getElementById('editSymbol').value = symbol;
+        document.getElementById('editName').value = name;
+        document.getElementById('editDescription').value = description || '';
+        document.getElementById('editIsActive').checked = isActive === 'true';
+        
+        const modal = new bootstrap.Modal(document.getElementById('editLikeTypeModal'));
+        modal.show();
+    }
+</script> 

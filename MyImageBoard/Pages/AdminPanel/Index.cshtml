@@ -165,6 +165,22 @@ else
                             </div>
                         </div>
                     }
+
+                    @if (Model.UserPermissions.Any(p => p.Name == "ManageLikeTypes"))
+                    {
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#likeTypesCollapse">
+                                    Управление типами реакций
+                                </button>
+                            </h2>
+                            <div id="likeTypesCollapse" class="accordion-collapse collapse" data-bs-parent="#adminAccordion">
+                                <div class="accordion-body">
+                                    <partial name="_ManageLikeTypesPartial" model="Model.LikeTypes" />
+                                </div>
+                            </div>
+                        </div>
+                    }
                 </div>
             </div>
         </div>

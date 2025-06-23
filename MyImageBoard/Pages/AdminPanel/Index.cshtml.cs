@@ -16,6 +16,7 @@ namespace ForumProject.Pages.AdminPanel
         private readonly ICommentService _commentService;
         private readonly IThreadService _threadService;
         private readonly IBoardService _boardService;
+        private readonly ILikeTypeService _likeTypeService;
 
         public SuperUser? CurrentSuperUser { get; set; }
         public IEnumerable<SuperUser> SuperUsers { get; set; } = Enumerable.Empty<SuperUser>();
@@ -23,6 +24,7 @@ namespace ForumProject.Pages.AdminPanel
         public IEnumerable<Comment> Comments { get; set; } = Enumerable.Empty<Comment>();
         public IEnumerable<Complaint> Complaints { get; set; } = Enumerable.Empty<Complaint>();
         public IEnumerable<Board> Boards { get; set; } = Enumerable.Empty<Board>();
+        public IEnumerable<LikeType> LikeTypes { get; set; } = Enumerable.Empty<LikeType>();
         public IEnumerable<Permission> UserPermissions { get; set; } = Enumerable.Empty<Permission>();
         public string? ErrorMessage { get; set; }
         public string? SuccessMessage { get; set; }
@@ -38,13 +40,15 @@ namespace ForumProject.Pages.AdminPanel
             ISuperUserService superUserService, 
             ICommentService commentService,
             IThreadService threadService,
-            IBoardService boardService)
+            IBoardService boardService,
+            ILikeTypeService likeTypeService)
         {
             _context = context;
             _superUserService = superUserService;
             _commentService = commentService;
             _threadService = threadService;
             _boardService = boardService;
+            _likeTypeService = likeTypeService;
         }
 
         public async Task<IActionResult> OnGetAsync()
@@ -239,38 +243,91 @@ namespace ForumProject.Pages.AdminPanel
 
         public async Task<IActionResult> OnPostDeleteBoardAsync(int boardId)
         {
-            var superUserId = HttpContext.Session.GetInt32("SuperUserId");
-            if (!superUserId.HasValue)
+            var currentUserId = HttpContext.Session.GetInt32("SuperUserId");
+            if (!currentUserId.HasValue || !await _superUserService.HasPermissionAsync(currentUserId.Value, "DeleteBoard"))
+                return Forbid();
+
+            try
             {
+                var success = await _boardService.DeleteBoardAsync(boardId);
+                if (!success)
+                {
+                    ErrorMessage = $"Board with ID {boardId} not found or could not be deleted.";
+                    return RedirectToPage();
+                }
+
+                SuccessMessage = $"Board with ID {boardId} deleted successfully.";
                 return RedirectToPage();
             }
-
-            CurrentSuperUser = await _superUserService.GetSuperUserByIdAsync(superUserId.Value);
-            if (CurrentSuperUser == null)
+            catch (Exception ex)
             {
+                ErrorMessage = $"Error deleting board {boardId}: {ex.Message}";
                 return RedirectToPage();
             }
-
-            if (!await _superUserService.HasPermissionAsync(CurrentSuperUser.Id, "DeleteBoard"))
-            {
-                ErrorMessage = "You don't have permission to delete boards.";
-                return RedirectToPage();
-            }
-
-            var success = await _boardService.DeleteBoardAsync(boardId);
-            if (!success)
-            {
-                ErrorMessage = "Failed to delete board. It might not exist or there was an error.";
-                return RedirectToPage();
-            }
-
-            SuccessMessage = "Board deleted successfully.";
-            return RedirectToPage();
         }
 
         public IActionResult OnPostLogout()
         {
             HttpContext.Session.Remove("SuperUserId");
+            return RedirectToPage();
+        }
+
+        public async Task<IActionResult> OnPostCreateLikeTypeAsync(string symbol, string name, string? description)
+        {
+            // Простая отладка
+            Console.WriteLine($"DEBUG: symbol='{symbol}', name='{name}', description='{description}'");
+            
+            var currentUserId = HttpContext.Session.GetInt32("SuperUserId");
+            if (!currentUserId.HasValue || !await _superUserService.HasPermissionAsync(currentUserId.Value, "ManageLikeTypes"))
+                return Forbid();
+
+            var (success, message, _) = await _likeTypeService.CreateLikeTypeAsync(symbol, name, description);
+            
+            Console.WriteLine($"DEBUG: CreateLikeTypeAsync result: success={success}, message='{message}'");
+            
+            if (!success)
+            {
+                ErrorMessage = message;
+                return RedirectToPage();
+            }
+
+            SuccessMessage = message;
+            return RedirectToPage();
+        }
+
+        public async Task<IActionResult> OnPostUpdateLikeTypeAsync(int id, string symbol, string name, string? description, bool? isActive)
+        {
+            var currentUserId = HttpContext.Session.GetInt32("SuperUserId");
+            if (!currentUserId.HasValue || !await _superUserService.HasPermissionAsync(currentUserId.Value, "ManageLikeTypes"))
+                return Forbid();
+
+            var (success, message) = await _likeTypeService.UpdateLikeTypeAsync(id, symbol, name, description, isActive);
+            
+            if (!success)
+            {
+                ErrorMessage = message;
+                return RedirectToPage();
+            }
+
+            SuccessMessage = message;
+            return RedirectToPage();
+        }
+
+        public async Task<IActionResult> OnPostDeleteLikeTypeAsync(int id)
+        {
+            var currentUserId = HttpContext.Session.GetInt32("SuperUserId");
+            if (!currentUserId.HasValue || !await _superUserService.HasPermissionAsync(currentUserId.Value, "ManageLikeTypes"))
+                return Forbid();
+
+            var (success, message) = await _likeTypeService.DeleteLikeTypeAsync(id);
+            
+            if (!success)
+            {
+                ErrorMessage = message;
+                return RedirectToPage();
+            }
+
+            SuccessMessage = message;
             return RedirectToPage();
         }
 
@@ -303,6 +360,8 @@ namespace ForumProject.Pages.AdminPanel
             Boards = await _context.Boards
                 .OrderBy(b => b.Title)
                 .ToListAsync();
+
+            LikeTypes = await _likeTypeService.GetAllLikeTypesAsync();
         }
     }
 } 

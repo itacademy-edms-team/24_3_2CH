@@ -42,7 +42,8 @@ namespace ForumProject.Data
                     new Permission { Name = "DeleteBoard", Description = "Can delete boards" },
                     new Permission { Name = "CreateSuperUser", Description = "Can create new superusers" },
                     new Permission { Name = "BlockSuperUser", Description = "Can block superusers" },
-                    new Permission { Name = "ManageSuperUserPermissions", Description = "Can manage superuser permissions" }
+                    new Permission { Name = "ManageSuperUserPermissions", Description = "Can manage superuser permissions" },
+                    new Permission { Name = "ManageLikeTypes", Description = "Can manage reaction types" }
                 };
 
                 await context.Permissions.AddRangeAsync(permissions);

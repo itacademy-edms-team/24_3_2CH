@@ -34,6 +34,12 @@ namespace ForumProject
             builder.Services.AddRazorPages();
             builder.Services.AddControllers(); // Добавляем поддержку контроллеров
 
+            // Настройка кодировки для форм
+            builder.Services.Configure<Microsoft.AspNetCore.Mvc.MvcOptions>(options =>
+            {
+                options.ModelBindingMessageProvider.SetValueMustNotBeNullAccessor(_ => "Поле обязательно для заполнения.");
+            });
+
             // Add session support
             builder.Services.AddDistributedMemoryCache();
             builder.Services.AddSession(options =>
@@ -54,7 +60,14 @@ namespace ForumProject
             }
 
             app.UseHttpsRedirection();
-            app.UseStaticFiles(); // ������ ����� ����������� ���� middleware ��� ����������� ������
+            app.UseStaticFiles(); //    middleware   
+
+            // Настройка кодировки для правильной обработки эмодзи
+            app.Use(async (context, next) =>
+            {
+                context.Request.EnableBuffering();
+                await next();
+            });
 
             app.UseRouting();
 
