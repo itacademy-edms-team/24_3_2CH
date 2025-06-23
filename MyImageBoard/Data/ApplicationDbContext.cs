@@ -16,6 +16,7 @@ namespace ForumProject.Data
         public DbSet<MediaFile> MediaFiles { get; set; } = null!;
         public DbSet<UserFingerprint> UserFingerprints { get; set; } = null!;
         public DbSet<Like> Likes { get; set; } = null!;
+        public DbSet<LikeType> LikeTypes { get; set; } = null!;
         public DbSet<Complaint> Complaints { get; set; } = null!;
         public DbSet<Moderator> Moderators { get; set; } = null!;
         public DbSet<Role> Roles { get; set; } = null!;
@@ -120,14 +121,14 @@ namespace ForumProject.Data
                 .HasCheckConstraint("CK_MediaFile_SingleParent",
                     "(ThreadId IS NULL AND CommentId IS NOT NULL) OR (ThreadId IS NOT NULL AND CommentId IS NULL)");
 
-            // Уникальный индекс для лайков: один fingerprint - один лайк на один тред/комментарий
+            // Уникальный индекс для лайков: один fingerprint - один лайк определенного типа на один тред/комментарий
             modelBuilder.Entity<Like>()
-                .HasIndex(l => new { l.UserFingerprintId, l.ThreadId })
+                .HasIndex(l => new { l.UserFingerprintId, l.ThreadId, l.LikeTypeId })
                 .HasFilter("[ThreadId] IS NOT NULL") // Индекс применяется только если ThreadId не NULL
                 .IsUnique();
 
             modelBuilder.Entity<Like>()
-                .HasIndex(l => new { l.UserFingerprintId, l.CommentId })
+                .HasIndex(l => new { l.UserFingerprintId, l.CommentId, l.LikeTypeId })
                 .HasFilter("[CommentId] IS NOT NULL") // Индекс применяется только если CommentId не NULL
                 .IsUnique();
 

@@ -2,7 +2,7 @@ using ForumProject.Data.Models;
 using ForumProject.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.Mvc.ModelBinding; // ��� ModelState.Remove
+using Microsoft.AspNetCore.Mvc.ModelBinding; //  ModelState.Remove
 
 namespace ForumProject.Pages.Threads
 {
@@ -11,6 +11,7 @@ namespace ForumProject.Pages.Threads
         private readonly IThreadService _threadService;
         private readonly ICommentService _commentService;
         private readonly ILikeService _likeService; 
+        private readonly ILikeTypeService _likeTypeService;
         private readonly IUserFingerprintService _userFingerprintService; 
         private readonly IComplaintService _complaintService;
         private readonly IMediaFileService _mediaFileService;
@@ -19,6 +20,7 @@ namespace ForumProject.Pages.Threads
             IThreadService threadService,
             ICommentService commentService,
             ILikeService likeService,
+            ILikeTypeService likeTypeService,
             IUserFingerprintService userFingerprintService,
             IComplaintService complaintService,
             IMediaFileService mediaFileService)
@@ -26,6 +28,7 @@ namespace ForumProject.Pages.Threads
             _threadService = threadService;
             _commentService = commentService;
             _likeService = likeService;
+            _likeTypeService = likeTypeService;
             _userFingerprintService = userFingerprintService;
             _complaintService = complaintService;
             _mediaFileService = mediaFileService;
@@ -39,11 +42,21 @@ namespace ForumProject.Pages.Threads
         [BindProperty]
         public Complaint NewComplaint { get; set; } = new Complaint();
 
-        public int CurrentUserFingerprintId { get; set; } // ���������
+        public int CurrentUserFingerprintId { get; set; }
 
-        public bool HasCurrentUserLikedThread { get; set; } // ���������
+        public List<LikeType> AllLikeTypes { get; set; } = new List<LikeType>();
 
-        public Dictionary<int, bool> HasCurrentUserLikedComments { get; set; } = new Dictionary<int, bool>(); // ���������
+        // Информация о реакциях пользователя на тред
+        public Dictionary<int, bool> UserThreadReactions { get; set; } = new Dictionary<int, bool>();
+
+        // Количество реакций каждого типа на тред
+        public Dictionary<int, int> ThreadReactionCounts { get; set; } = new Dictionary<int, int>();
+
+        // Информация о реакциях пользователя на комментарии
+        public Dictionary<int, Dictionary<int, bool>> UserCommentReactions { get; set; } = new Dictionary<int, Dictionary<int, bool>>();
+
+        // Количество реакций каждого типа на комментарии
+        public Dictionary<int, Dictionary<int, int>> CommentReactionCounts { get; set; } = new Dictionary<int, Dictionary<int, int>>();
 
         public bool HasCurrentUserComplainedThread { get; set; }
 
@@ -64,32 +77,45 @@ namespace ForumProject.Pages.Threads
             var userFingerprint = await _userFingerprintService.GetOrCreateFingerprintAsync(HttpContext);
             CurrentUserFingerprintId = userFingerprint.Id;
 
-            HasCurrentUserLikedThread = await _likeService.HasUserLikedAsync(CurrentUserFingerprintId, Thread.Id, null);
+            // Получаем все типы реакций
+            AllLikeTypes = await _likeTypeService.GetAllActiveLikeTypesAsync();
+
+            // Получаем информацию о реакциях пользователя на тред
+            UserThreadReactions = await _likeService.GetUserReactionsForThreadAsync(CurrentUserFingerprintId, Thread.Id);
+
+            // Получаем количество реакций каждого типа на тред
+            ThreadReactionCounts = await _likeService.GetReactionCountsForThreadAsync(Thread.Id);
+
+            // Получаем информацию о реакциях пользователя на комментарии
+            UserCommentReactions = await _likeService.GetUserReactionsForCommentsAsync(CurrentUserFingerprintId, (ICollection<Comment>)Thread.Comments);
+
+            // Получаем количество реакций каждого типа на комментарии
+            CommentReactionCounts = await _likeService.GetReactionCountsForCommentsAsync((ICollection<Comment>)Thread.Comments);
+
             HasCurrentUserComplainedThread = await _complaintService.HasUserComplainedAsync(CurrentUserFingerprintId, Thread.Id, null);
 
-            // Рекурсивно обрабатываем все комментарии для проверки лайков и жалоб
+            // Рекурсивно обрабатываем все комментарии для проверки жалоб
             if (Thread.Comments != null)
             {
-                await ProcessCommentsRecursivelyAsync(Thread.Comments);
+                await ProcessComplaintsRecursivelyAsync(Thread.Comments);
             }
 
             ViewData["BoardId"] = Thread.BoardId;
-            TempData["BoardId"] = Thread.BoardId; // Сохраняем для случаев редиректа
+            TempData["BoardId"] = Thread.BoardId;
 
             return Page();
         }
 
-        private async Task ProcessCommentsRecursivelyAsync(ICollection<Comment> comments)
+        private async Task ProcessComplaintsRecursivelyAsync(ICollection<Comment> comments)
         {
             foreach (var comment in comments)
             {
-                HasCurrentUserLikedComments[comment.Id] = await _likeService.HasUserLikedAsync(CurrentUserFingerprintId, 0, comment.Id);
                 HasCurrentUserComplainedComments[comment.Id] = await _complaintService.HasUserComplainedAsync(CurrentUserFingerprintId, null, comment.Id);
 
                 // Рекурсивно обрабатываем дочерние комментарии
                 if (comment.ChildComments != null && comment.ChildComments.Any())
                 {
-                    await ProcessCommentsRecursivelyAsync(comment.ChildComments);
+                    await ProcessComplaintsRecursivelyAsync(comment.ChildComments);
                 }
             }
         }
@@ -130,25 +156,21 @@ namespace ForumProject.Pages.Threads
         }
 
         //    
-        public async Task<IActionResult> OnPostToggleLikeAsync(int? threadId, int? commentId)
+        public async Task<IActionResult> OnPostToggleLikeAsync(int? threadId, int? commentId, int likeTypeId)
         {
             if (!threadId.HasValue && !commentId.HasValue)
             {
                 return BadRequest("Не указан ID треда или комментария для лайка.");
             }
 
-            //    UserFingerprint   
             var userFingerprint = await _userFingerprintService.GetOrCreateFingerprintAsync(HttpContext);
-            CurrentUserFingerprintId = userFingerprint.Id; //      
+            CurrentUserFingerprintId = userFingerprint.Id;
 
-            await _likeService.ToggleLikeAsync(CurrentUserFingerprintId, threadId, commentId);
+            await _likeService.ToggleLikeAsync(CurrentUserFingerprintId, threadId, commentId, likeTypeId);
 
-            // ,     (ID )
             int redirectThreadId = threadId.HasValue ? threadId.Value : Thread?.Id ?? 0;
-            if (redirectThreadId == 0) //  Id    Thread == null
+            if (redirectThreadId == 0)
             {
-                //  ,       
-                //         commentId,    
                 if (commentId.HasValue)
                 {
                     var comment = await _commentService.GetCommentByIdAsync(commentId.Value);

@@ -10,6 +10,27 @@ namespace ForumProject.Data
         {
             await context.Database.MigrateAsync();
 
+            // Инициализация типов реакций
+            if (!context.LikeTypes.Any())
+            {
+                var likeTypes = new List<LikeType>
+                {
+                    new LikeType { Symbol = "👍", Name = "Like", Description = "Нравится" },
+                    new LikeType { Symbol = "❤️", Name = "Heart", Description = "Любовь" },
+                    new LikeType { Symbol = "😂", Name = "Laugh", Description = "Смех" },
+                    new LikeType { Symbol = "😮", Name = "Wow", Description = "Удивление" },
+                    new LikeType { Symbol = "😢", Name = "Sad", Description = "Грусть" },
+                    new LikeType { Symbol = "😡", Name = "Angry", Description = "Злость" },
+                    new LikeType { Symbol = "👏", Name = "Clap", Description = "Аплодисменты" },
+                    new LikeType { Symbol = "🔥", Name = "Fire", Description = "Огонь" },
+                    new LikeType { Symbol = "💯", Name = "Hundred", Description = "100 баллов" },
+                    new LikeType { Symbol = "🎉", Name = "Party", Description = "Праздник" }
+                };
+
+                await context.LikeTypes.AddRangeAsync(likeTypes);
+                await context.SaveChangesAsync();
+            }
+
             if (!context.Permissions.Any())
             {
                 var permissions = new List<Permission>

@@ -19,6 +19,7 @@ namespace ForumProject
             // Добавляем сервисы
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<ILikeService, LikeService>();
+            builder.Services.AddScoped<ILikeTypeService, LikeTypeService>();
             builder.Services.AddScoped<IThreadService, ThreadService>();
             builder.Services.AddScoped<ICommentService, CommentService>();
             builder.Services.AddScoped<IBoardService, BoardService>();

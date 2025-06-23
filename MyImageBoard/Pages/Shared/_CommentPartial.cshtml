@@ -1,4 +1,4 @@
-@model (ForumProject.Data.Models.Comment comment, bool hasUserLiked, bool hasUserComplained, int userFingerprintId, System.Collections.Generic.Dictionary<int, bool> hasUserLikedComments, System.Collections.Generic.Dictionary<int, bool> hasUserComplainedComments)
+@model (ForumProject.Data.Models.Comment comment, System.Collections.Generic.List<ForumProject.Data.Models.LikeType> allLikeTypes, System.Collections.Generic.Dictionary<int, bool> userReactions, System.Collections.Generic.Dictionary<int, int> reactionCounts, bool hasUserComplained, int userFingerprintId, System.Collections.Generic.Dictionary<int, bool> hasUserComplainedComments)
 
 <div class="comment mb-3 p-3 border rounded position-relative" id="comment_@Model.comment.Id">
     <div class="comment-content">
@@ -43,32 +43,38 @@
         }
     </div>
 
-    <div class="comment-actions mt-2 d-flex gap-2">
-        <form method="post" asp-page-handler="ToggleLike">
-            <input type="hidden" name="commentId" value="@Model.comment.Id" />
-            <button type="submit" class="btn @(Model.hasUserLiked ? "btn-danger" : "btn-outline-danger") btn-sm">
-                <i class="bi bi-heart-fill"></i>
-                Лайк <span class="badge bg-secondary">@Model.comment.Likes?.Count</span>
-            </button>
-        </form>
-
-        @if (!Model.hasUserComplained)
-        {
-            <button type="button" class="btn btn-outline-warning btn-sm" 
-                    onclick="showComplaintModal(null, @Model.comment.Id, '@Model.comment.Content.Substring(0, Math.Min(30, Model.comment.Content.Length))...')">
-                <i class="bi bi-exclamation-triangle"></i> Пожаловаться
-            </button>
+    <div class="comment-actions mt-2">
+        @{
+            var commentReactionsModel = new ForumProject.Pages.Shared.ReactionsViewModel
+            {
+                AllLikeTypes = Model.allLikeTypes,
+                UserReactions = Model.userReactions,
+                ReactionCounts = Model.reactionCounts,
+                ThreadId = null,
+                CommentId = Model.comment.Id
+            };
         }
-        else
-        {
-            <button type="button" class="btn btn-warning btn-sm" disabled>
-                <i class="bi bi-exclamation-triangle"></i> Жалоба отправлена
-            </button>
-        }
+        <partial name="_ReactionsPartial" model="commentReactionsModel" />
 
-        <button type="button" class="btn btn-outline-primary btn-sm" onclick="toggleReplyForm(@Model.comment.Id)">
-            <i class="bi bi-reply"></i> Ответить
-        </button>
+        <div class="d-flex gap-2 mt-2">
+            @if (!Model.hasUserComplained)
+            {
+                <button type="button" class="btn btn-outline-warning btn-sm" 
+                        onclick="showComplaintModal(null, @Model.comment.Id, '@Model.comment.Content.Substring(0, Math.Min(30, Model.comment.Content.Length))...')">
+                    <i class="bi bi-exclamation-triangle"></i> Пожаловаться
+                </button>
+            }
+            else
+            {
+                <button type="button" class="btn btn-warning btn-sm" disabled>
+                    <i class="bi bi-exclamation-triangle"></i> Жалоба отправлена
+                </button>
+            }
+
+            <button type="button" class="btn btn-outline-primary btn-sm" onclick="toggleReplyForm(@Model.comment.Id)">
+                <i class="bi bi-reply"></i> Ответить
+            </button>
+        </div>
     </div>
 
     @* Форма для ответа на комментарий *@
@@ -115,10 +121,11 @@
             @foreach (var childComment in Model.comment.ChildComments.OrderBy(c => c.CreatedAt))
             {
                 <partial name="_CommentPartial" model="(childComment, 
-                         Model.hasUserLikedComments.GetValueOrDefault(childComment.Id),
+                         Model.allLikeTypes,
+                         Model.userReactions,
+                         Model.reactionCounts,
                          Model.hasUserComplainedComments.GetValueOrDefault(childComment.Id),
                          Model.userFingerprintId,
-                         Model.hasUserLikedComments,
                          Model.hasUserComplainedComments)" />
             }
         </div>

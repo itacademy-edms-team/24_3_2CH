@@ -78,14 +78,18 @@ else
         }
     </div>
 
-    <div class="mb-3 d-flex gap-2">
-        <form method="post" asp-page-handler="ToggleLike">
-            <input type="hidden" name="threadId" value="@Model.Thread.Id" />
-            <button type="submit" class="btn @(Model.HasCurrentUserLikedThread ? "btn-danger" : "btn-outline-danger") btn-sm">
-                <i class="bi bi-heart-fill"></i> @* Иконка сердца. Убедись, что Bootstrap Icons подключены. *@
-                Лайк <span class="badge bg-secondary">@Model.Thread.Likes?.Count</span>
-            </button>
-        </form>
+    <div class="mb-3">
+        @{
+            var threadReactionsModel = new ForumProject.Pages.Shared.ReactionsViewModel
+            {
+                AllLikeTypes = Model.AllLikeTypes,
+                UserReactions = Model.UserThreadReactions,
+                ReactionCounts = Model.ThreadReactionCounts,
+                ThreadId = Model.Thread.Id,
+                CommentId = null
+            };
+        }
+        <partial name="_ReactionsPartial" model="threadReactionsModel" />
 
         @if (!Model.HasCurrentUserComplainedThread)
         {
@@ -323,10 +327,11 @@ else
             @foreach (var comment in Model.Thread.Comments.Where(c => c.ParentCommentId == null).OrderBy(c => c.CreatedAt))
             {
                 <partial name="_CommentPartial" model="(comment, 
-                         Model.HasCurrentUserLikedComments.GetValueOrDefault(comment.Id),
+                         Model.AllLikeTypes,
+                         Model.UserCommentReactions.GetValueOrDefault(comment.Id, new Dictionary<int, bool>()),
+                         Model.CommentReactionCounts.GetValueOrDefault(comment.Id, new Dictionary<int, int>()),
                          Model.HasCurrentUserComplainedComments.GetValueOrDefault(comment.Id),
                          Model.CurrentUserFingerprintId,
-                         Model.HasCurrentUserLikedComments,
                          Model.HasCurrentUserComplainedComments)" />
             }
         </div>

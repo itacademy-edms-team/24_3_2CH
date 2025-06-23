@@ -1,0 +1,81 @@
+@model ForumProject.Pages.Shared.ReactionsViewModel
+
+<div class="reactions-container">
+    <div class="reactions-buttons d-flex flex-wrap gap-1">
+        @foreach (var likeType in Model.AllLikeTypes)
+        {
+            var isUserReacted = Model.UserReactions.ContainsKey(likeType.Id) && Model.UserReactions[likeType.Id];
+            var reactionCount = Model.ReactionCounts.ContainsKey(likeType.Id) ? Model.ReactionCounts[likeType.Id] : 0;
+            
+            <form method="post" asp-page-handler="ToggleLike" class="d-inline">
+                <input type="hidden" name="threadId" value="@Model.ThreadId" />
+                <input type="hidden" name="commentId" value="@Model.CommentId" />
+                <input type="hidden" name="likeTypeId" value="@likeType.Id" />
+                
+                <button type="submit" 
+                        class="btn reaction-btn @(isUserReacted ? "reaction-active" : "reaction-inactive")"
+                        title="@likeType.Description">
+                    <span class="reaction-symbol">@likeType.Symbol</span>
+                    @if (reactionCount > 0)
+                    {
+                        <span class="reaction-count">@reactionCount</span>
+                    }
+                </button>
+            </form>
+        }
+    </div>
+</div>
+
+<style>
+    .reactions-container {
+        margin: 0.5rem 0;
+    }
+    
+    .reaction-btn {
+        border: 1px solid #dee2e6;
+        border-radius: 20px;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s ease;
+        background: white;
+        min-width: 40px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    
+    .reaction-btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .reaction-inactive {
+        color: #6c757d;
+    }
+    
+    .reaction-inactive:hover {
+        background-color: #f8f9fa;
+        border-color: #adb5bd;
+    }
+    
+    .reaction-active {
+        background-color: #e3f2fd;
+        border-color: #2196f3;
+        color: #1976d2;
+    }
+    
+    .reaction-active:hover {
+        background-color: #bbdefb;
+    }
+    
+    .reaction-symbol {
+        font-size: 1rem;
+    }
+    
+    .reaction-count {
+        font-size: 0.75rem;
+        font-weight: 500;
+        min-width: 16px;
+        text-align: center;
+    }
+</style> 

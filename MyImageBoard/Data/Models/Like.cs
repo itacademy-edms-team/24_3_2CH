@@ -25,5 +25,11 @@ namespace ForumProject.Data.Models
         public int UserFingerprintId { get; set; }
         [BindNever] // Не привязываем UserFingerprint из формы
         public UserFingerprint UserFingerprint { get; set; } = null!; // Обязательное навигационное свойство
+
+        // Связь с типом реакции
+        [Required]
+        public int LikeTypeId { get; set; }
+        [BindNever]
+        public LikeType LikeType { get; set; } = null!;
     }
 }
