@@ -86,11 +86,14 @@ namespace ForumProject.Pages.Threads
             // Получаем количество реакций каждого типа на тред
             ThreadReactionCounts = await _likeService.GetReactionCountsForThreadAsync(Thread.Id);
 
+            // Получаем все комментарии (включая вложенные)
+            var allComments = GetAllCommentsFlat(Thread.Comments ?? new List<Comment>());
+
             // Получаем информацию о реакциях пользователя на комментарии
-            UserCommentReactions = await _likeService.GetUserReactionsForCommentsAsync(CurrentUserFingerprintId, (ICollection<Comment>)Thread.Comments);
+            UserCommentReactions = await _likeService.GetUserReactionsForCommentsAsync(CurrentUserFingerprintId, allComments);
 
             // Получаем количество реакций каждого типа на комментарии
-            CommentReactionCounts = await _likeService.GetReactionCountsForCommentsAsync((ICollection<Comment>)Thread.Comments);
+            CommentReactionCounts = await _likeService.GetReactionCountsForCommentsAsync(allComments);
 
             HasCurrentUserComplainedThread = await _complaintService.HasUserComplainedAsync(CurrentUserFingerprintId, Thread.Id, null);
 
@@ -104,6 +107,18 @@ namespace ForumProject.Pages.Threads
             TempData["BoardId"] = Thread.BoardId;
 
             return Page();
+        }
+
+        private List<Comment> GetAllCommentsFlat(ICollection<Comment> comments)
+        {
+            var all = new List<Comment>();
+            foreach (var comment in comments)
+            {
+                all.Add(comment);
+                if (comment.ChildComments != null && comment.ChildComments.Any())
+                    all.AddRange(GetAllCommentsFlat(comment.ChildComments));
+            }
+            return all;
         }
 
         private async Task ProcessComplaintsRecursivelyAsync(ICollection<Comment> comments)

@@ -1,18 +1,18 @@
-@model (ForumProject.Data.Models.Comment comment, System.Collections.Generic.List<ForumProject.Data.Models.LikeType> allLikeTypes, System.Collections.Generic.Dictionary<int, bool> userReactions, System.Collections.Generic.Dictionary<int, int> reactionCounts, bool hasUserComplained, int userFingerprintId, System.Collections.Generic.Dictionary<int, bool> hasUserComplainedComments)
+@model ForumProject.Pages.Shared.CommentDisplayModel
 
-<div class="comment mb-3 p-3 border rounded position-relative" id="comment_@Model.comment.Id">
+<div class="comment mb-3 p-3 border rounded position-relative" id="comment_@Model.Comment.Id">
     <div class="comment-content">
         <div class="comment-info mb-2">
-            <span class="author">@(string.IsNullOrEmpty(Model.comment.Tripcode) ? "Аноним" : Model.comment.Tripcode)</span>
-            <span class="text-muted ms-2">@Model.comment.CreatedAt.ToShortDateString()</span>
+            <span class="author">@(string.IsNullOrEmpty(Model.Comment.Tripcode) ? "Аноним" : Model.Comment.Tripcode)</span>
+            <span class="text-muted ms-2">@Model.Comment.CreatedAt.ToShortDateString()</span>
         </div>
-        <p>@Model.comment.Content</p>
+        <p>@Model.Comment.Content</p>
 
-        @if (Model.comment.MediaFiles != null && Model.comment.MediaFiles.Any())
+        @if (Model.Comment.MediaFiles != null && Model.Comment.MediaFiles.Any())
         {
             <div class="media-files mt-2">
                 <div class="d-flex flex-wrap gap-2">
-                    @foreach (var mediaFile in Model.comment.MediaFiles)
+                    @foreach (var mediaFile in Model.Comment.MediaFiles)
                     {
                         <div class="media-file" style="width: 200px; height: 200px;">
                             @if (mediaFile.FileType == "image")
@@ -47,20 +47,20 @@
         @{
             var commentReactionsModel = new ForumProject.Pages.Shared.ReactionsViewModel
             {
-                AllLikeTypes = Model.allLikeTypes,
-                UserReactions = Model.userReactions,
-                ReactionCounts = Model.reactionCounts,
+                AllLikeTypes = Model.AllLikeTypes,
+                UserReactions = Model.UserReactions,
+                ReactionCounts = Model.ReactionCounts,
                 ThreadId = null,
-                CommentId = Model.comment.Id
+                CommentId = Model.Comment.Id
             };
         }
         <partial name="_ReactionsPartial" model="commentReactionsModel" />
 
         <div class="d-flex gap-2 mt-2">
-            @if (!Model.hasUserComplained)
+            @if (!Model.HasUserComplained)
             {
                 <button type="button" class="btn btn-outline-warning btn-sm" 
-                        onclick="showComplaintModal(null, @Model.comment.Id, '@Model.comment.Content.Substring(0, Math.Min(30, Model.comment.Content.Length))...')">
+                        onclick="showComplaintModal(null, @Model.Comment.Id, '@Model.Comment.Content.Substring(0, Math.Min(30, Model.Comment.Content.Length))...')">
                     <i class="bi bi-exclamation-triangle"></i> Пожаловаться
                 </button>
             }
@@ -71,17 +71,17 @@
                 </button>
             }
 
-            <button type="button" class="btn btn-outline-primary btn-sm" onclick="toggleReplyForm(@Model.comment.Id)">
+            <button type="button" class="btn btn-outline-primary btn-sm" onclick="toggleReplyForm(@Model.Comment.Id)">
                 <i class="bi bi-reply"></i> Ответить
             </button>
         </div>
     </div>
 
     @* Форма для ответа на комментарий *@
-    <div id="replyForm_@Model.comment.Id" class="reply-form mt-3" style="display: none;">
+    <div id="replyForm_@Model.Comment.Id" class="reply-form mt-3" style="display: none;">
         <form method="post" asp-page-handler="AddComment" enctype="multipart/form-data">
-            <input type="hidden" name="NewComment.ThreadId" value="@Model.comment.ThreadId" />
-            <input type="hidden" name="NewComment.ParentCommentId" value="@Model.comment.Id" />
+            <input type="hidden" name="NewComment.ThreadId" value="@Model.Comment.ThreadId" />
+            <input type="hidden" name="NewComment.ParentCommentId" value="@Model.Comment.Id" />
             <div class="form-group">
                 <textarea name="NewComment.Content" class="form-control" rows="3" required 
                           placeholder="Напишите ваш ответ..."></textarea>
@@ -95,38 +95,44 @@
             <div class="form-group mb-3">
                 <label class="control-label">Медиафайлы (необязательно)</label>
                 <div class="custom-file">
-                    <input type="file" class="form-control" id="mediaFiles_@Model.comment.Id" name="mediaFiles" multiple
+                    <input type="file" class="form-control" id="mediaFiles_@Model.Comment.Id" name="mediaFiles" multiple
                            accept=".jpeg,.jpg,.png,.gif,.mp4,.webm"
-                           onchange="handleFileSelect(event, @Model.comment.Id)" />
+                           onchange="handleFileSelect(event, @Model.Comment.Id)" />
                     <small class="form-text text-muted">
                         Максимум 4 файла, общим размером до 50 МБ.<br />
                         Поддерживаемые форматы: JPEG, PNG, GIF, MP4, WEBM
                     </small>
                 </div>
-                <div id="mediaPreview_@Model.comment.Id" class="d-flex flex-wrap gap-2 mt-2"></div>
+                <div id="mediaPreview_@Model.Comment.Id" class="d-flex flex-wrap gap-2 mt-2"></div>
             </div>
 
             <div class="form-group mt-2">
                 <button type="submit" class="btn btn-primary btn-sm">Отправить</button>
-                <button type="button" class="btn btn-secondary btn-sm" onclick="toggleReplyForm(@Model.comment.Id)">Отмена</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="toggleReplyForm(@Model.Comment.Id)">Отмена</button>
             </div>
         </form>
     </div>
 
     @* Дочерние комментарии *@
-    @if (Model.comment.ChildComments != null && Model.comment.ChildComments.Any())
+    @if (Model.Comment.ChildComments != null && Model.Comment.ChildComments.Any())
     {
         <div class="child-comments mt-3 ms-4 position-relative">
             <div class="comment-thread-line"></div>
-            @foreach (var childComment in Model.comment.ChildComments.OrderBy(c => c.CreatedAt))
+            @foreach (var childComment in Model.Comment.ChildComments.OrderBy(c => c.CreatedAt))
             {
-                <partial name="_CommentPartial" model="(childComment, 
-                         Model.allLikeTypes,
-                         Model.userReactions,
-                         Model.reactionCounts,
-                         Model.hasUserComplainedComments.GetValueOrDefault(childComment.Id),
-                         Model.userFingerprintId,
-                         Model.hasUserComplainedComments)" />
+                var childModel = new ForumProject.Pages.Shared.CommentDisplayModel
+                {
+                    Comment = childComment,
+                    AllLikeTypes = Model.AllLikeTypes,
+                    UserReactions = Model.UserCommentReactionsGlobal != null && Model.UserCommentReactionsGlobal.ContainsKey(childComment.Id) ? Model.UserCommentReactionsGlobal[childComment.Id] : new Dictionary<int, bool>(),
+                    ReactionCounts = Model.CommentReactionCountsGlobal != null && Model.CommentReactionCountsGlobal.ContainsKey(childComment.Id) ? Model.CommentReactionCountsGlobal[childComment.Id] : new Dictionary<int, int>(),
+                    HasUserComplained = Model.HasUserComplainedComments.GetValueOrDefault(childComment.Id),
+                    UserFingerprintId = Model.UserFingerprintId,
+                    HasUserComplainedComments = Model.HasUserComplainedComments,
+                    UserCommentReactionsGlobal = Model.UserCommentReactionsGlobal,
+                    CommentReactionCountsGlobal = Model.CommentReactionCountsGlobal
+                };
+                <partial name="_CommentPartial" model="childModel" />
             }
         </div>
     }

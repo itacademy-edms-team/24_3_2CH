@@ -326,13 +326,19 @@ else
         <div class="comments-section">
             @foreach (var comment in Model.Thread.Comments.Where(c => c.ParentCommentId == null).OrderBy(c => c.CreatedAt))
             {
-                <partial name="_CommentPartial" model="(comment, 
-                         Model.AllLikeTypes,
-                         Model.UserCommentReactions.GetValueOrDefault(comment.Id, new Dictionary<int, bool>()),
-                         Model.CommentReactionCounts.GetValueOrDefault(comment.Id, new Dictionary<int, int>()),
-                         Model.HasCurrentUserComplainedComments.GetValueOrDefault(comment.Id),
-                         Model.CurrentUserFingerprintId,
-                         Model.HasCurrentUserComplainedComments)" />
+                var commentModel = new ForumProject.Pages.Shared.CommentDisplayModel
+                {
+                    Comment = comment,
+                    AllLikeTypes = Model.AllLikeTypes,
+                    UserReactions = Model.UserCommentReactions.ContainsKey(comment.Id) ? Model.UserCommentReactions[comment.Id] : new Dictionary<int, bool>(),
+                    ReactionCounts = Model.CommentReactionCounts.ContainsKey(comment.Id) ? Model.CommentReactionCounts[comment.Id] : new Dictionary<int, int>(),
+                    HasUserComplained = Model.HasCurrentUserComplainedComments.GetValueOrDefault(comment.Id),
+                    UserFingerprintId = Model.CurrentUserFingerprintId,
+                    HasUserComplainedComments = Model.HasCurrentUserComplainedComments,
+                    UserCommentReactionsGlobal = Model.UserCommentReactions,
+                    CommentReactionCountsGlobal = Model.CommentReactionCounts
+                };
+                <partial name="_CommentPartial" model="commentModel" />
             }
         </div>
     }
