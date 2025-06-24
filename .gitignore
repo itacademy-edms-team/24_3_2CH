@@ -361,3 +361,8 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# User uploaded media files
+MyImageBoard/wwwroot/uploads/
+MyImageBoard/wwwroot/uploads/threads/
+MyImageBoard/wwwroot/uploads/threads/*/

@@ -18,11 +18,6 @@ namespace ForumProject.Data
         public DbSet<Like> Likes { get; set; } = null!;
         public DbSet<LikeType> LikeTypes { get; set; } = null!;
         public DbSet<Complaint> Complaints { get; set; } = null!;
-        public DbSet<Moderator> Moderators { get; set; } = null!;
-        public DbSet<Role> Roles { get; set; } = null!;
-        public DbSet<RoleGroup> RoleGroups { get; set; } = null!;
-        public DbSet<ModeratorRoleGroup> ModeratorRoleGroups { get; set; } = null!;
-        public DbSet<RoleGroupRole> RoleGroupRoles { get; set; } = null!;
         public DbSet<Quiz> Quizzes { get; set; } = null!;
         public DbSet<QuizOption> QuizOptions { get; set; } = null!;
         public DbSet<QuizVote> QuizVotes { get; set; } = null!;
@@ -141,33 +136,6 @@ namespace ForumProject.Data
             modelBuilder.Entity<QuizVote>()
                 .HasIndex(qv => new { qv.UserFingerprintId, qv.QuizOptionId })
                 .IsUnique();
-
-            // Настройка связующих таблиц для "многие ко многим"
-            modelBuilder.Entity<ModeratorRoleGroup>()
-                .HasKey(mrg => new { mrg.ModeratorId, mrg.RoleGroupId }); // Составной первичный ключ
-
-            modelBuilder.Entity<ModeratorRoleGroup>()
-                .HasOne(mrg => mrg.Moderator)
-                .WithMany(m => m.ModeratorRoleGroups)
-                .HasForeignKey(mrg => mrg.ModeratorId);
-
-            modelBuilder.Entity<ModeratorRoleGroup>()
-                .HasOne(mrg => mrg.RoleGroup)
-                .WithMany(rg => rg.ModeratorRoleGroups)
-                .HasForeignKey(mrg => mrg.RoleGroupId);
-
-            modelBuilder.Entity<RoleGroupRole>()
-                .HasKey(rgr => new { rgr.RoleGroupId, rgr.RoleId }); // Составной первичный ключ
-
-            modelBuilder.Entity<RoleGroupRole>()
-                .HasOne(rgr => rgr.RoleGroup)
-                .WithMany(rg => rg.RoleGroupRoles)
-                .HasForeignKey(rgr => rgr.RoleGroupId);
-
-            modelBuilder.Entity<RoleGroupRole>()
-                .HasOne(rgr => rgr.Role)
-                .WithMany(r => r.RoleGroupRoles)
-                .HasForeignKey(rgr => rgr.RoleId);
 
             // SuperUser -> Group
             modelBuilder.Entity<SuperUser>()
