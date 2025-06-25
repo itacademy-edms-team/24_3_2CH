@@ -5,6 +5,7 @@
 }
 
 <link rel="stylesheet" href="~/css/quiz.css" />
+<link rel="stylesheet" href="~/css/threads-create.css" />
 
 <h1>Создать новый тред на доске "@Model.BoardTitle"</h1>
 
@@ -16,12 +17,12 @@
             <input type="hidden" id="threadQuizzes" name="Quizzes" value="[]" />
 
             <div class="form-group mb-3">
-                <label asp-for="Thread.Title" class="control-label"></label>
+                <label asp-for="Thread.Title" class="control-label">Заголовок</label>
                 <input asp-for="Thread.Title" class="form-control" />
                 <span asp-validation-for="Thread.Title" class="text-danger"></span>
             </div>
             <div class="form-group mb-3">
-                <label asp-for="Thread.Content" class="control-label"></label>
+                <label asp-for="Thread.Content" class="control-label">Текст сообщения</label>
                 <textarea asp-for="Thread.Content" class="form-control" rows="10"></textarea>
                 <span asp-validation-for="Thread.Content" class="text-danger"></span>
             </div>

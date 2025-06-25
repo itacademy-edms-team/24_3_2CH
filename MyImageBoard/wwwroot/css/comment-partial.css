@@ -1,0 +1,49 @@
+.comment {
+    background-color: #fff !important;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.child-comments {
+    border-left: 2px solid #dee2e6;
+    padding-left: 1rem;
+}
+
+.comment-thread-line {
+    position: absolute;
+    left: -1px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: #dee2e6;
+}
+
+.media-file {
+    position: relative;
+    overflow: hidden;
+    border-radius: 4px;
+}
+
+.media-file img, .media-file video {
+    transition: transform 0.2s;
+    object-fit: cover;
+}
+
+.media-file:hover img, .media-file:hover video {
+    transform: scale(1.05);
+}
+
+.video-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #000;
+}
+
+.video-container video {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+} 

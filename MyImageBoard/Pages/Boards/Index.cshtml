@@ -3,12 +3,22 @@
 @{
     ViewData["Title"] = "Доски форума";
 }
+<link rel="stylesheet" href="~/css/boards-index.css" />
 
-<h1>Доски форума</h1>
+<div class="main-header" style="display: flex; align-items: flex-start; justify-content: center; gap: 2.5em; margin-bottom: 1.5em; margin-top: 1.2em;">
+    <div class="main-header-title" style="font-size: 4em; font-weight: 900; color: #b88a00; letter-spacing: 0.04em; line-height: 1.05; margin-bottom: 0.2em; margin-top: 0.2em;">Mimesis</div>
+    <div class="main-header-image" style="width: 100px; height: 100px; background: #f5f5dc; border: 2px dashed #e0c97f; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2em; color: #e0c97f; margin-top: 0.2em;">
+        <!-- Здесь будет ваша картинка -->
+        <span>IMG</span>
+    </div>
+</div>
+<div class="main-description" style="font-size: 1.25em; color: #444; margin-bottom: 2.5em; max-width: 1000px; margin-left: auto; margin-right: auto; text-align: left;">
+    Добро пожаловать на Mimesis — уютную имиджборду для общения, обмена мемами, обсуждения аниме, технологий и всего, что душе угодно. Здесь каждый может создать тред, поделиться мыслями или просто понаблюдать за жизнью борды.
+</div>
 
 @if (Model.Boards != null && Model.Boards.Any())
 {
-    <table class="table">
+    <table class="boards-table">
         <thead>
             <tr>
                 <th>Название</th>

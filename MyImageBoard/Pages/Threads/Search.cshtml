@@ -4,48 +4,60 @@
     ViewData["Title"] = "Поиск тредов";
 }
 <h2>Поиск тредов</h2>
-<form method="get">
-    <div>
-        <label>Дата создания (от):</label>
-        <input type="date" name="CreatedFrom" value="@Model.Filter.CreatedFrom?.ToString("yyyy-MM-dd")" />
-        <label>Дата создания (до):</label>
-        <input type="date" name="CreatedTo" value="@Model.Filter.CreatedTo?.ToString("yyyy-MM-dd")" />
+<form method="get" class="search-form">
+    <div class="search-row">
+        <div class="search-field">
+            <label>Дата создания (от):</label>
+            <input type="date" name="CreatedFrom" value="@Model.Filter.CreatedFrom?.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="search-field">
+            <label>Дата создания (до):</label>
+            <input type="date" name="CreatedTo" value="@Model.Filter.CreatedTo?.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="search-field">
+            <label>Количество комментариев (от):</label>
+            <input type="number" name="CommentsFrom" value="@Model.Filter.CommentsFrom" min="0" />
+        </div>
     </div>
-    <div>
-        <label>Количество комментариев (от):</label>
-        <input type="number" name="CommentsFrom" value="@Model.Filter.CommentsFrom" min="0" />
-        <label>Количество комментариев (до):</label>
-        <input type="number" name="CommentsTo" value="@Model.Filter.CommentsTo" min="0" />
+    <div class="search-row">
+        <div class="search-field">
+            <label>Количество комментариев (до):</label>
+            <input type="number" name="CommentsTo" value="@Model.Filter.CommentsTo" min="0" />
+        </div>
+        <div class="search-field">
+            <label>Заголовок:</label>
+            <input type="text" name="Title" value="@Model.Filter.Title" />
+        </div>
+        <div class="search-field">
+            <label>Текст ОП-поста:</label>
+            <input type="text" name="Content" value="@Model.Filter.Content" />
+        </div>
     </div>
-    <div>
-        <label>Заголовок:</label>
-        <input type="text" name="Title" value="@Model.Filter.Title" />
+    <div class="search-row">
+        <div class="search-field">
+            <label>Трипкод:</label>
+            <input type="text" name="Tripcode" value="@Model.Filter.Tripcode" />
+        </div>
+        <div class="search-field">
+            <label>Тег:</label>
+            <input type="text" name="Tag" value="@Model.Filter.Tag" placeholder="аниме" />
+        </div>
+        <div class="search-field search-btn-field">
+            <button type="submit">Искать</button>
+        </div>
     </div>
-    <div>
-        <label>Текст ОП-поста:</label>
-        <input type="text" name="Content" value="@Model.Filter.Content" />
-    </div>
-    <div>
-        <label>Трипкод:</label>
-        <input type="text" name="Tripcode" value="@Model.Filter.Tripcode" />
-    </div>
-    <div>
-        <label>Тег:</label>
-        <input type="text" name="Tag" value="@Model.Filter.Tag" placeholder="аниме" />
-    </div>
-    <button type="submit">Искать</button>
 </form>
 @if (Model.Results != null)
 {
     <h3>Результаты поиска</h3>
-    <table>
+    <table class="search-results-table table">
         <thead>
             <tr>
                 <th>ID</th>
                 <th>Заголовок</th>
                 <th>Дата создания</th>
                 <th>Комментарии</th>
-                <th>Трипкод</th>
+                <th>Автор</th>
                 <th>Теги</th>
                 <th></th>
             </tr>
@@ -58,13 +70,13 @@
                 <td>@thread.Title</td>
                 <td>@thread.CreatedAt.ToString("g")</td>
                 <td>@thread.CommentsCount</td>
-                <td>@thread.Tripcode</td>
+                <td>@(string.IsNullOrEmpty(thread.Tripcode) ? "Аноним" : thread.Tripcode)</td>
                 <td>
                     @if (!string.IsNullOrWhiteSpace(thread.Tags))
                     {
                         foreach (var tag in thread.Tags.Split(',', System.StringSplitOptions.RemoveEmptyEntries))
                         {
-                            <span class="badge bg-secondary mx-1">@tag.Trim()</span>
+                            <span class="search-tag">@tag.Trim()</span>
                         }
                     }
                 </td>

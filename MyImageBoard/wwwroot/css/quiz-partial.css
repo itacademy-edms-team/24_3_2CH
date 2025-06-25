@@ -1,0 +1,35 @@
+.quiz-container {
+    background-color: #f8f9fa;
+    border-radius: 0.25rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid #e0e0e0;
+}
+
+.quiz-options .form-check {
+    padding: 10px;
+    border-radius: 5px;
+    transition: background-color 0.2s;
+}
+
+.quiz-options .form-check:hover {
+    background-color: #e9ecef;
+}
+
+.progress {
+    background-color: #e9ecef;
+}
+
+.progress-bar {
+    background-color: #007bff;
+}
+
+/* Стили для заблокированных элементов */
+.form-check-input:disabled + .form-check-label {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+button:disabled {
+    cursor: not-allowed;
+} 

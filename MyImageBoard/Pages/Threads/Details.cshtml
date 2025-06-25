@@ -5,6 +5,7 @@
     ViewData["Title"] = Model.Thread?.Title ?? "Тред не найден";
 }
 
+<link rel="stylesheet" href="~/css/boards-details.css" />
 <link rel="stylesheet" href="~/css/quiz.css" />
 
 @if (Model.Thread == null)
@@ -17,368 +18,375 @@
 }
 else
 {
-    <h1>@Model.Thread.Title</h1>
-    @if (!string.IsNullOrWhiteSpace(Model.Thread.Tags))
-    {
-        <div class="mb-2">
-            <span class="badge bg-info text-dark">Теги:</span>
-            @foreach (var tag in Model.Thread.Tags.Split(',', System.StringSplitOptions.RemoveEmptyEntries))
-            {
-                <span class="badge bg-secondary mx-1">@tag.Trim()</span>
-            }
+    <div class="thread-card card mb-4 position-relative">
+        <a asp-page="/Boards/Details" asp-route-id="@Model.Thread.BoardId" class="btn btn-secondary position-absolute top-0 end-0 m-3" style="z-index:2;">
+            <i class="bi bi-arrow-left"></i> Вернуться к доске
+        </a>
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="card-title mb-0">@Model.Thread.Title</h1>
+                @if (!string.IsNullOrWhiteSpace(Model.Thread.Tags))
+                {
+                    <div class="mb-1">
+                        <span class="badge bg-info text-dark">Теги:</span>
+                        @foreach (var tag in Model.Thread.Tags.Split(',', System.StringSplitOptions.RemoveEmptyEntries))
+                        {
+                            <span class="badge bg-secondary mx-1">@tag.Trim()</span>
+                        }
+                    </div>
+                }
+                <small class="text-muted">
+                    Автор: @(string.IsNullOrEmpty(Model.Thread.Tripcode) ? "Аноним" : Model.Thread.Tripcode) |
+                    @Model.Thread.CreatedAt.ToString("dd.MM.yyyy HH:mm")
+                </small>
+            </div>
         </div>
-    }
-    <div class="thread-info mb-2">
-        <span class="author">Автор: @(string.IsNullOrEmpty(Model.Thread.Tripcode) ? "Аноним" : Model.Thread.Tripcode)</span>
-        <span class="text-muted ms-2">@Model.Thread.CreatedAt.ToShortDateString()</span>
-    </div>
-    <div class="thread-content">
-        <p>@Model.Thread.Content</p>
-
-        @if (Model.Thread.MediaFiles != null && Model.Thread.MediaFiles.Any())
-        {
-            <div class="media-files mt-2">
-                <div class="d-flex flex-wrap gap-2">
-                    @foreach (var mediaFile in Model.Thread.MediaFiles)
-                    {
-                        <div class="media-file" style="width: 200px; height: 200px;">
-                            @if (mediaFile.FileType == "image")
+        <div class="card-body">
+            <div class="thread-content mb-3">
+                <p>@Model.Thread.Content</p>
+                @if (Model.Thread.MediaFiles != null && Model.Thread.MediaFiles.Any())
+                {
+                    <div class="media-files mt-2">
+                        <div class="d-flex flex-wrap gap-2">
+                            @foreach (var mediaFile in Model.Thread.MediaFiles)
                             {
-                                <a href="/@mediaFile.FileName" target="_blank" class="d-block h-100">
-                                    <img src="/@mediaFile.FileName" class="img-thumbnail w-100 h-100 object-fit-cover" alt="Прикрепленное изображение" />
-                                </a>
-                            }
-                            else if (mediaFile.FileType == "video")
-                            {
-                                <div class="video-container">
-                                    <video controls class="w-100 h-100">
-                                        <source src="/@mediaFile.FileName" type="@mediaFile.MimeType">
-                                        Ваш браузер не поддерживает видео.
-                                    </video>
+                                <div class="media-file">
+                                    @if (mediaFile.FileType == "image")
+                                    {
+                                        <a href="/@mediaFile.FileName" target="_blank" class="d-block h-100">
+                                            <img src="/@mediaFile.FileName" class="img-thumbnail w-100 h-100 object-fit-cover" alt="Прикрепленное изображение" />
+                                        </a>
+                                    }
+                                    else if (mediaFile.FileType == "video")
+                                    {
+                                        <div class="video-container">
+                                            <video controls class="w-100 h-100">
+                                                <source src="/@mediaFile.FileName" type="@mediaFile.MimeType">
+                                                Ваш браузер не поддерживает видео.
+                                            </video>
+                                        </div>
+                                    }
+                                    else if (mediaFile.MimeType == "image/gif")
+                                    {
+                                        <a href="/@mediaFile.FileName" target="_blank" class="d-block h-100">
+                                            <img src="/@mediaFile.FileName" class="img-thumbnail w-100 h-100 object-fit-cover" alt="GIF анимация" />
+                                        </a>
+                                    }
                                 </div>
                             }
-                            else if (mediaFile.MimeType == "image/gif")
-                            {
-                                <a href="/@mediaFile.FileName" target="_blank" class="d-block h-100">
-                                    <img src="/@mediaFile.FileName" class="img-thumbnail w-100 h-100 object-fit-cover" alt="GIF анимация" />
-                                </a>
-                            }
                         </div>
+                    </div>
+                }
+                @if (Model.Thread.Quizzes != null && Model.Thread.Quizzes.Any())
+                {
+                    <div class="quizzes mt-3">
+                        @foreach (var quiz in Model.Thread.Quizzes)
+                        {
+                            <partial name="_QuizPartial" model="quiz" />
+                        }
+                    </div>
+                }
+            </div>
+            <div class="mb-3">
+                @{
+                    var threadReactionsModel = new ForumProject.Pages.Shared.ReactionsViewModel
+                    {
+                        AllLikeTypes = Model.AllLikeTypes,
+                        UserReactions = Model.UserThreadReactions,
+                        ReactionCounts = Model.ThreadReactionCounts,
+                        ThreadId = Model.Thread.Id,
+                        CommentId = null
+                    };
+                }
+                <partial name="_ReactionsPartial" model="threadReactionsModel" />
+
+                @if (!Model.HasCurrentUserComplainedThread)
+                {
+                    <button type="button" class="btn btn-outline-warning btn-sm" 
+                            onclick="showComplaintModal(@Model.Thread.Id, null, '@Model.Thread.Title')">
+                        <i class="bi bi-exclamation-triangle"></i> Пожаловаться
+                    </button>
+                }
+                else
+                {
+                    <button type="button" class="btn btn-warning btn-sm" disabled>
+                        <i class="bi bi-exclamation-triangle"></i> Жалоба отправлена
+                    </button>
+                }
+            </div>
+            <hr />
+
+            <h3>Комментарии</h3>
+
+            @* Форма для добавления нового комментария *@
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <h4>Добавить комментарий</h4>
+                    <form method="post" asp-page-handler="AddComment" enctype="multipart/form-data">
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                        <input type="hidden" name="NewComment.ThreadId" value="@Model.Thread.Id" />
+
+                        <div class="form-group mb-3">
+                            <label for="NewComment_Content" class="control-label">Текст комментария</label>
+                            <textarea name="NewComment.Content" id="NewComment_Content" class="form-control" rows="5" required></textarea>
+                            <span asp-validation-for="NewComment.Content" class="text-danger"></span>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="NewComment_Tripcode" class="control-label">Трипкод (необязательно)</label>
+                            <input type="text" name="NewComment.Tripcode" id="NewComment_Tripcode" class="form-control" placeholder="username#password" />
+                            <small class="form-text text-muted">Формат: username#password. Пример: Anon#secretpass</small>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label class="control-label">Медиафайлы (необязательно)</label>
+                            <div class="custom-file">
+                                <input type="file" class="form-control" id="mediaFiles" name="mediaFiles" multiple
+                                       accept=".jpeg,.jpg,.png,.gif,.mp4,.webm"
+                                       onchange="handleFileSelect(event)" />
+                                <small class="form-text text-muted">
+                                    Максимум 4 файла, общим размером до 50 МБ.<br />
+                                    Поддерживаемые форматы: JPEG, PNG, GIF, MP4, WEBM
+                                </small>
+                            </div>
+                            <div id="mediaPreview" class="d-flex flex-wrap gap-2 mt-2"></div>
+                        </div>
+
+                        <div class="form-group mt-3">
+                            <button type="submit" class="btn btn-primary">Отправить</button>
+                        </div>
+                    </form>
+                    @section Scripts {
+                        @{
+                            await Html.RenderPartialAsync("_ValidationScriptsPartial");
+                        }
+                        <script src="~/js/quiz.js"></script>
+                        <script>
+                            let selectedFiles = new Map(); // Используем Map для хранения файлов
+                            let replySelectedFiles = new Map(); // Для файлов в формах ответов
+
+                            function handleFileSelect(event, commentId = null) {
+                                const files = Array.from(event.target.files);
+                                const maxFiles = @MediaFileSettings.MaxFilesPerThread;
+                                const maxSize = @MediaFileSettings.MaxTotalSizeBytes;
+                                
+                                // Определяем, какую Map использовать
+                                const fileMap = commentId ? replySelectedFiles : selectedFiles;
+                                const previewId = commentId ? `mediaPreview_${commentId}` : 'mediaPreview';
+                                
+                                // Проверяем общее количество файлов
+                                if (fileMap.size + files.length > maxFiles) {
+                                    alert(`Максимальное количество файлов: ${maxFiles}`);
+                                    event.target.value = '';
+                                    return;
+                                }
+
+                                // Проверяем общий размер
+                                let totalSize = Array.from(fileMap.values()).reduce((sum, file) => sum + file.size, 0);
+                                for (const file of files) {
+                                    totalSize += file.size;
+                                }
+                                if (totalSize > maxSize) {
+                                    alert(`Общий размер файлов не должен превышать ${maxSize / 1024 / 1024} МБ`);
+                                    event.target.value = '';
+                                    return;
+                                }
+
+                                // Добавляем новые файлы
+                                files.forEach(file => {
+                                    const fileId = Date.now() + Math.random();
+                                    fileMap.set(fileId, file);
+                                    
+                                    const preview = document.createElement('div');
+                                    preview.className = 'position-relative';
+                                    preview.style.width = '150px';
+                                    preview.style.height = '150px';
+                                    
+                                    if (file.type.startsWith('image/')) {
+                                        const img = document.createElement('img');
+                                        img.className = 'img-thumbnail w-100 h-100 object-fit-cover';
+                                        img.file = file;
+                                        preview.appendChild(img);
+
+                                        const reader = new FileReader();
+                                        reader.onload = (function(aImg) { 
+                                            return function(e) { aImg.src = e.target.result; }; 
+                                        })(img);
+                                        reader.readAsDataURL(file);
+                                    } else if (file.type.startsWith('video/')) {
+                                        const video = document.createElement('video');
+                                        video.className = 'w-100 h-100 object-fit-cover';
+                                        video.controls = true;
+                                        preview.appendChild(video);
+
+                                        const reader = new FileReader();
+                                        reader.onload = (function(aVideo) {
+                                            return function(e) { aVideo.src = e.target.result; };
+                                        })(video);
+                                        reader.readAsDataURL(file);
+                                    } else {
+                                        const icon = document.createElement('div');
+                                        icon.className = 'bg-secondary text-white d-flex align-items-center justify-content-center w-100 h-100';
+                                        icon.innerHTML = '<i class="bi bi-file-earmark fs-1"></i>';
+                                        preview.appendChild(icon);
+                                    }
+
+                                    // Добавляем кнопку удаления
+                                    const removeBtn = document.createElement('button');
+                                    removeBtn.className = 'btn btn-danger btn-sm position-absolute top-0 end-0 m-1';
+                                    removeBtn.innerHTML = '×';
+                                    removeBtn.onclick = function() {
+                                        fileMap.delete(fileId);
+                                        preview.remove();
+                                        updateFileInput(commentId);
+                                    };
+                                    preview.appendChild(removeBtn);
+
+                                    document.getElementById(previewId).appendChild(preview);
+                                });
+
+                                updateFileInput(commentId);
+                            }
+
+                            function updateFileInput(commentId = null) {
+                                // Определяем, какую Map использовать и какой input обновить
+                                const fileMap = commentId ? replySelectedFiles : selectedFiles;
+                                const inputId = commentId ? `mediaFiles_${commentId}` : 'mediaFiles';
+                                
+                                // Создаем новый FileList из выбранных файлов
+                                const dt = new DataTransfer();
+                                for (const file of fileMap.values()) {
+                                    dt.items.add(file);
+                                }
+                                document.getElementById(inputId).files = dt.files;
+                            }
+
+                            function toggleReplyForm(commentId) {
+                                const formElement = document.getElementById(`replyForm_${commentId}`);
+                                if (formElement) {
+                                    const isVisible = formElement.style.display !== 'none';
+                                    formElement.style.display = isVisible ? 'none' : 'block';
+                                    
+                                    if (!isVisible) {
+                                        const textarea = formElement.querySelector('textarea');
+                                        if (textarea) {
+                                            textarea.focus();
+                                        }
+                                    }
+                                }
+                            }
+
+                            function showComplaintModal(threadId, commentId, title) {
+                                document.getElementById('complaintThreadId').value = threadId || '';
+                                document.getElementById('complaintCommentId').value = commentId || '';
+                                
+                                const targetText = commentId 
+                                    ? `Жалоба на комментарий к "${title}"`
+                                    : `Жалоба на тред "${title}"`;
+                                document.getElementById('complaintTarget').textContent = targetText;
+
+                                const modal = new bootstrap.Modal(document.getElementById('complaintModal'));
+                                modal.show();
+                            }
+
+                            // Показываем сообщения об успехе/ошибке
+                            @if (TempData["SuccessMessage"] != null)
+                            {
+                                <text>
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    const toast = new bootstrap.Toast(document.createElement('div'));
+                                    toast.element.className = 'toast align-items-center text-white bg-success border-0 position-fixed bottom-0 end-0 m-3';
+                                    toast.element.innerHTML = `
+                                        <div class="d-flex">
+                                            <div class="toast-body">@TempData["SuccessMessage"]</div>
+                                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                                        </div>`;
+                                    document.body.appendChild(toast.element);
+                                    toast.show();
+                                });
+                                </text>
+                            }
+
+                            @if (TempData["ErrorMessage"] != null)
+                            {
+                                <text>
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    const toast = new bootstrap.Toast(document.createElement('div'));
+                                    toast.element.className = 'toast align-items-center text-white bg-danger border-0 position-fixed bottom-0 end-0 m-3';
+                                    toast.element.innerHTML = `
+                                        <div class="d-flex">
+                                            <div class="toast-body">@TempData["ErrorMessage"]</div>
+                                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                                        </div>`;
+                                    document.body.appendChild(toast.element);
+                                    toast.show();
+                                });
+                                </text>
+                            }
+
+                            // Устанавливаем ID текущего треда для работы с опросами
+                            window.currentThreadId = @Model.Thread?.Id;
+                        </script>
                     }
                 </div>
             </div>
-        }
 
-        @if (Model.Thread.Quizzes != null && Model.Thread.Quizzes.Any())
-        {
-            foreach (var quiz in Model.Thread.Quizzes)
+            @if (Model.Thread.Comments != null && Model.Thread.Comments.Any())
             {
-                <partial name="_QuizPartial" model="quiz" />
-            }
-        }
-    </div>
-
-    <div class="mb-3">
-        @{
-            var threadReactionsModel = new ForumProject.Pages.Shared.ReactionsViewModel
-            {
-                AllLikeTypes = Model.AllLikeTypes,
-                UserReactions = Model.UserThreadReactions,
-                ReactionCounts = Model.ThreadReactionCounts,
-                ThreadId = Model.Thread.Id,
-                CommentId = null
-            };
-        }
-        <partial name="_ReactionsPartial" model="threadReactionsModel" />
-
-        @if (!Model.HasCurrentUserComplainedThread)
-        {
-            <button type="button" class="btn btn-outline-warning btn-sm" 
-                    onclick="showComplaintModal(@Model.Thread.Id, null, '@Model.Thread.Title')">
-                <i class="bi bi-exclamation-triangle"></i> Пожаловаться
-            </button>
-        }
-        else
-        {
-            <button type="button" class="btn btn-warning btn-sm" disabled>
-                <i class="bi bi-exclamation-triangle"></i> Жалоба отправлена
-            </button>
-        }
-    </div>
-    <hr />
-
-    <h3>Комментарии</h3>
-
-    @* Форма для добавления нового комментария *@
-    <div class="row mb-4">
-        <div class="col-md-8">
-            <h4>Добавить комментарий</h4>
-            <form method="post" asp-page-handler="AddComment" enctype="multipart/form-data">
-                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-                <input type="hidden" name="NewComment.ThreadId" value="@Model.Thread.Id" />
-
-                <div class="form-group mb-3">
-                    <label for="NewComment_Content" class="control-label">Текст комментария</label>
-                    <textarea name="NewComment.Content" id="NewComment_Content" class="form-control" rows="5" required></textarea>
-                    <span asp-validation-for="NewComment.Content" class="text-danger"></span>
-                </div>
-                <div class="form-group mb-3">
-                    <label for="NewComment_Tripcode" class="control-label">Трипкод (необязательно)</label>
-                    <input type="text" name="NewComment.Tripcode" id="NewComment_Tripcode" class="form-control" placeholder="username#password" />
-                    <small class="form-text text-muted">Формат: username#password. Пример: Anon#secretpass</small>
-                </div>
-
-                <div class="form-group mb-3">
-                    <label class="control-label">Медиафайлы (необязательно)</label>
-                    <div class="custom-file">
-                        <input type="file" class="form-control" id="mediaFiles" name="mediaFiles" multiple
-                               accept=".jpeg,.jpg,.png,.gif,.mp4,.webm"
-                               onchange="handleFileSelect(event)" />
-                        <small class="form-text text-muted">
-                            Максимум 4 файла, общим размером до 50 МБ.<br />
-                            Поддерживаемые форматы: JPEG, PNG, GIF, MP4, WEBM
-                        </small>
-                    </div>
-                    <div id="mediaPreview" class="d-flex flex-wrap gap-2 mt-2"></div>
-                </div>
-
-                <div class="form-group mt-3">
-                    <button type="submit" class="btn btn-primary">Отправить</button>
-                </div>
-            </form>
-            @section Scripts {
-                @{
-                    await Html.RenderPartialAsync("_ValidationScriptsPartial");
-                }
-                <script src="~/js/quiz.js"></script>
-                <script>
-                    let selectedFiles = new Map(); // Используем Map для хранения файлов
-                    let replySelectedFiles = new Map(); // Для файлов в формах ответов
-
-                    function handleFileSelect(event, commentId = null) {
-                        const files = Array.from(event.target.files);
-                        const maxFiles = @MediaFileSettings.MaxFilesPerThread;
-                        const maxSize = @MediaFileSettings.MaxTotalSizeBytes;
-                        
-                        // Определяем, какую Map использовать
-                        const fileMap = commentId ? replySelectedFiles : selectedFiles;
-                        const previewId = commentId ? `mediaPreview_${commentId}` : 'mediaPreview';
-                        
-                        // Проверяем общее количество файлов
-                        if (fileMap.size + files.length > maxFiles) {
-                            alert(`Максимальное количество файлов: ${maxFiles}`);
-                            event.target.value = '';
-                            return;
-                        }
-
-                        // Проверяем общий размер
-                        let totalSize = Array.from(fileMap.values()).reduce((sum, file) => sum + file.size, 0);
-                        for (const file of files) {
-                            totalSize += file.size;
-                        }
-                        if (totalSize > maxSize) {
-                            alert(`Общий размер файлов не должен превышать ${maxSize / 1024 / 1024} МБ`);
-                            event.target.value = '';
-                            return;
-                        }
-
-                        // Добавляем новые файлы
-                        files.forEach(file => {
-                            const fileId = Date.now() + Math.random();
-                            fileMap.set(fileId, file);
-                            
-                            const preview = document.createElement('div');
-                            preview.className = 'position-relative';
-                            preview.style.width = '150px';
-                            preview.style.height = '150px';
-                            
-                            if (file.type.startsWith('image/')) {
-                                const img = document.createElement('img');
-                                img.className = 'img-thumbnail w-100 h-100 object-fit-cover';
-                                img.file = file;
-                                preview.appendChild(img);
-
-                                const reader = new FileReader();
-                                reader.onload = (function(aImg) { 
-                                    return function(e) { aImg.src = e.target.result; }; 
-                                })(img);
-                                reader.readAsDataURL(file);
-                            } else if (file.type.startsWith('video/')) {
-                                const video = document.createElement('video');
-                                video.className = 'w-100 h-100 object-fit-cover';
-                                video.controls = true;
-                                preview.appendChild(video);
-
-                                const reader = new FileReader();
-                                reader.onload = (function(aVideo) {
-                                    return function(e) { aVideo.src = e.target.result; };
-                                })(video);
-                                reader.readAsDataURL(file);
-                            } else {
-                                const icon = document.createElement('div');
-                                icon.className = 'bg-secondary text-white d-flex align-items-center justify-content-center w-100 h-100';
-                                icon.innerHTML = '<i class="bi bi-file-earmark fs-1"></i>';
-                                preview.appendChild(icon);
-                            }
-
-                            // Добавляем кнопку удаления
-                            const removeBtn = document.createElement('button');
-                            removeBtn.className = 'btn btn-danger btn-sm position-absolute top-0 end-0 m-1';
-                            removeBtn.innerHTML = '×';
-                            removeBtn.onclick = function() {
-                                fileMap.delete(fileId);
-                                preview.remove();
-                                updateFileInput(commentId);
-                            };
-                            preview.appendChild(removeBtn);
-
-                            document.getElementById(previewId).appendChild(preview);
-                        });
-
-                        updateFileInput(commentId);
-                    }
-
-                    function updateFileInput(commentId = null) {
-                        // Определяем, какую Map использовать и какой input обновить
-                        const fileMap = commentId ? replySelectedFiles : selectedFiles;
-                        const inputId = commentId ? `mediaFiles_${commentId}` : 'mediaFiles';
-                        
-                        // Создаем новый FileList из выбранных файлов
-                        const dt = new DataTransfer();
-                        for (const file of fileMap.values()) {
-                            dt.items.add(file);
-                        }
-                        document.getElementById(inputId).files = dt.files;
-                    }
-
-                    function toggleReplyForm(commentId) {
-                        const formElement = document.getElementById(`replyForm_${commentId}`);
-                        if (formElement) {
-                            const isVisible = formElement.style.display !== 'none';
-                            formElement.style.display = isVisible ? 'none' : 'block';
-                            
-                            if (!isVisible) {
-                                const textarea = formElement.querySelector('textarea');
-                                if (textarea) {
-                                    textarea.focus();
-                                }
-                            }
-                        }
-                    }
-
-                    function showComplaintModal(threadId, commentId, title) {
-                        document.getElementById('complaintThreadId').value = threadId || '';
-                        document.getElementById('complaintCommentId').value = commentId || '';
-                        
-                        const targetText = commentId 
-                            ? `Жалоба на комментарий к "${title}"`
-                            : `Жалоба на тред "${title}"`;
-                        document.getElementById('complaintTarget').textContent = targetText;
-
-                        const modal = new bootstrap.Modal(document.getElementById('complaintModal'));
-                        modal.show();
-                    }
-
-                    // Показываем сообщения об успехе/ошибке
-                    @if (TempData["SuccessMessage"] != null)
+                <div class="comments-section">
+                    @foreach (var comment in Model.Thread.Comments.Where(c => c.ParentCommentId == null).OrderBy(c => c.CreatedAt))
                     {
-                        <text>
-                        document.addEventListener('DOMContentLoaded', function() {
-                            const toast = new bootstrap.Toast(document.createElement('div'));
-                            toast.element.className = 'toast align-items-center text-white bg-success border-0 position-fixed bottom-0 end-0 m-3';
-                            toast.element.innerHTML = `
-                                <div class="d-flex">
-                                    <div class="toast-body">@TempData["SuccessMessage"]</div>
-                                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-                                </div>`;
-                            document.body.appendChild(toast.element);
-                            toast.show();
-                        });
-                        </text>
+                        var commentModel = new ForumProject.Pages.Shared.CommentDisplayModel
+                        {
+                            Comment = comment,
+                            AllLikeTypes = Model.AllLikeTypes,
+                            UserReactions = Model.UserCommentReactions.ContainsKey(comment.Id) ? Model.UserCommentReactions[comment.Id] : new Dictionary<int, bool>(),
+                            ReactionCounts = Model.CommentReactionCounts.ContainsKey(comment.Id) ? Model.CommentReactionCounts[comment.Id] : new Dictionary<int, int>(),
+                            HasUserComplained = Model.HasCurrentUserComplainedComments.GetValueOrDefault(comment.Id),
+                            UserFingerprintId = Model.CurrentUserFingerprintId,
+                            HasUserComplainedComments = Model.HasCurrentUserComplainedComments,
+                            UserCommentReactionsGlobal = Model.UserCommentReactions,
+                            CommentReactionCountsGlobal = Model.CommentReactionCounts
+                        };
+                        <partial name="_CommentPartial" model="commentModel" />
                     }
-
-                    @if (TempData["ErrorMessage"] != null)
-                    {
-                        <text>
-                        document.addEventListener('DOMContentLoaded', function() {
-                            const toast = new bootstrap.Toast(document.createElement('div'));
-                            toast.element.className = 'toast align-items-center text-white bg-danger border-0 position-fixed bottom-0 end-0 m-3';
-                            toast.element.innerHTML = `
-                                <div class="d-flex">
-                                    <div class="toast-body">@TempData["ErrorMessage"]</div>
-                                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-                                </div>`;
-                            document.body.appendChild(toast.element);
-                            toast.show();
-                        });
-                        </text>
-                    }
-
-                    // Устанавливаем ID текущего треда для работы с опросами
-                    window.currentThreadId = @Model.Thread?.Id;
-                </script>
-            }
-        </div>
-    </div>
-
-    @if (Model.Thread.Comments != null && Model.Thread.Comments.Any())
-    {
-        <div class="comments-section">
-            @foreach (var comment in Model.Thread.Comments.Where(c => c.ParentCommentId == null).OrderBy(c => c.CreatedAt))
-            {
-                var commentModel = new ForumProject.Pages.Shared.CommentDisplayModel
-                {
-                    Comment = comment,
-                    AllLikeTypes = Model.AllLikeTypes,
-                    UserReactions = Model.UserCommentReactions.ContainsKey(comment.Id) ? Model.UserCommentReactions[comment.Id] : new Dictionary<int, bool>(),
-                    ReactionCounts = Model.CommentReactionCounts.ContainsKey(comment.Id) ? Model.CommentReactionCounts[comment.Id] : new Dictionary<int, int>(),
-                    HasUserComplained = Model.HasCurrentUserComplainedComments.GetValueOrDefault(comment.Id),
-                    UserFingerprintId = Model.CurrentUserFingerprintId,
-                    HasUserComplainedComments = Model.HasCurrentUserComplainedComments,
-                    UserCommentReactionsGlobal = Model.UserCommentReactions,
-                    CommentReactionCountsGlobal = Model.CommentReactionCounts
-                };
-                <partial name="_CommentPartial" model="commentModel" />
-            }
-        </div>
-    }
-    else
-    {
-        <p>Комментариев пока нет. Будьте первым, кто оставит комментарий!</p>
-    }
-
-    <hr />
-    <div>
-        <a asp-page="/Boards/Details" asp-route-id="@Model.Thread.BoardId">Вернуться к доске</a>
-    </div>
-
-    @* Модальное окно для жалоб *@
-    <div class="modal fade" id="complaintModal" tabindex="-1" aria-labelledby="complaintModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="complaintModalLabel">Отправить жалобу</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form method="post" asp-page-handler="AddComplaint">
-                    <div class="modal-body">
-                        <input type="hidden" id="complaintThreadId" name="threadId" />
-                        <input type="hidden" id="complaintCommentId" name="commentId" />
-                        
-                        <p id="complaintTarget" class="mb-3 text-muted"></p>
+            }
+            else
+            {
+                <p>Комментариев пока нет. Будьте первым, кто оставит комментарий!</p>
+            }
 
-                        <div class="mb-3">
-                            <label asp-for="NewComplaint.Reason" class="form-label">Причина жалобы</label>
-                            <textarea asp-for="NewComplaint.Reason" class="form-control" rows="3" required 
-                                    maxlength="500" placeholder="Опишите причину жалобы..."></textarea>
-                            <span asp-validation-for="NewComplaint.Reason" class="text-danger"></span>
+            <hr />
+
+            @* Модальное окно для жалоб *@
+            <div class="modal fade" id="complaintModal" tabindex="-1" aria-labelledby="complaintModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="complaintModalLabel">Отправить жалобу</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
+                        <form method="post" asp-page-handler="AddComplaint">
+                            <div class="modal-body">
+                                <input type="hidden" id="complaintThreadId" name="threadId" />
+                                <input type="hidden" id="complaintCommentId" name="commentId" />
+                                
+                                <p id="complaintTarget" class="mb-3 text-muted"></p>
+
+                                <div class="mb-3">
+                                    <label asp-for="NewComplaint.Reason" class="form-label">Причина жалобы</label>
+                                    <textarea asp-for="NewComplaint.Reason" class="form-control" rows="3" required 
+                                            maxlength="500" placeholder="Опишите причину жалобы..."></textarea>
+                                    <span asp-validation-for="NewComplaint.Reason" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                <button type="submit" class="btn btn-warning">Отправить жалобу</button>
+                            </div>
+                        </form>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                        <button type="submit" class="btn btn-warning">Отправить жалобу</button>
-                    </div>
-                </form>
+                </div>
             </div>
         </div>
     </div>

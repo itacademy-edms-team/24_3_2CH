@@ -29,3 +29,26 @@ body {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
 }
+
+.navbar {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.nav-strict {
+  border: none !important;
+  border-radius: 0 !important;
+  color: #111 !important;
+  background: transparent !important;
+  font-weight: 500;
+  padding: 0.5rem 1.2rem;
+  margin-right: 0.5rem;
+  transition: text-decoration 0.2s;
+}
+
+.nav-strict:hover, .nav-strict:focus {
+  background: transparent !important;
+  color: #111 !important;
+  border: none !important;
+  text-decoration: underline !important;
+}

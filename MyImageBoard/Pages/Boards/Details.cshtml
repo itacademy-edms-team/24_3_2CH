@@ -17,11 +17,11 @@ else
     <div class="board-header mb-4">
         <h1>@Model.Board.Title</h1>
         <p class="lead">@Model.Board.Description</p>
-        <small class="text-muted">Создана: @Model.Board.CreatedAt.ToShortDateString()</small>
+        <small class="text-muted">Создана: @Model.Board.CreatedAt.ToString("dd.MM.yyyy HH:mm")</small>
     </div>
 
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3>Треды</h3>
+        <h3 class="threads-title">Треды</h3>
         <a asp-page="/Threads/Create" asp-route-boardId="@Model.Board.Id" class="btn btn-primary">
             <i class="bi bi-plus-circle"></i> Создать новый тред
         </a>
@@ -48,8 +48,7 @@ else
                             }
                             <small class="text-muted">
                                 Автор: @(string.IsNullOrEmpty(thread.Tripcode) ? "Аноним" : thread.Tripcode) | 
-                                @thread.CreatedAt.ToShortDateString() | 
-                                <i class="bi bi-eye"></i> @thread.ViewsCount
+                                @thread.CreatedAt.ToString("dd.MM.yyyy HH:mm")
                             </small>
                         </div>
                         <a asp-page="/Threads/Details" asp-route-id="@thread.Id" class="btn btn-outline-primary btn-sm">
@@ -129,37 +128,4 @@ else
     </div>
 }
 
-<style>
-    .thread-card {
-        transition: transform 0.2s;
-    }
-
-    .thread-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-
-    .media-file {
-        position: relative;
-        overflow: hidden;
-        border-radius: 4px;
-    }
-
-    .media-file img, .media-file video {
-        transition: transform 0.2s;
-        object-fit: cover;
-    }
-
-    .media-file:hover img, .media-file:hover video {
-        transform: scale(1.05);
-    }
-
-    .video-container {
-        width: 100%;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background-color: #000;
-    }
-</style>
+<link rel="stylesheet" href="/css/boards-details.css" />

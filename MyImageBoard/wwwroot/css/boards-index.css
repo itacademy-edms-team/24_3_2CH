@@ -1,0 +1,32 @@
+/* Стили для таблицы досок */
+
+.boards-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    font-size: 1em;
+    margin-top: 1.5em;
+}
+.boards-table th, .boards-table td {
+    border: 1px solid #e0e0e0;
+    padding: 0.5em 0.7em;
+    text-align: left;
+}
+.boards-table th {
+    background: #f0f0e0;
+    color: #333;
+    font-weight: 600;
+}
+.boards-table tr:nth-child(even) {
+    background: #fafaf5;
+}
+.boards-table tr:hover {
+    background: #f5f5dc;
+}
+.boards-table a {
+    color: #0645ad;
+    text-decoration: none;
+}
+.boards-table a:hover {
+    text-decoration: underline;
+} 

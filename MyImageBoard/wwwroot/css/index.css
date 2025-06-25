@@ -1,0 +1,106 @@
+/* Стили для главной страницы Memesis */
+
+.main-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 2.5em;
+    margin-bottom: 2em;
+    margin-top: 2.5em;
+}
+.main-header-title {
+    font-size: 2.7em;
+    font-weight: 800;
+    color: #b88a00;
+    letter-spacing: 0.04em;
+    line-height: 1.1;
+    margin-bottom: 0.2em;
+}
+.main-header-image {
+    width: 90px;
+    height: 90px;
+    background: #f5f5dc;
+    border: 2px dashed #e0c97f;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2em;
+    color: #e0c97f;
+}
+.main-description {
+    font-size: 1.25em;
+    color: #444;
+    margin-bottom: 2.5em;
+    max-width: 600px;
+}
+@media (max-width: 700px) {
+    .main-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1em;
+    }
+    .main-header-image {
+        width: 60px;
+        height: 60px;
+    }
+    .main-header-title {
+        font-size: 2em;
+    }
+    .main-description {
+        font-size: 1em;
+    }
+}
+
+/* Стили для блока досок на главной */
+.boards-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    font-size: 1em;
+    margin-top: 1.5em;
+}
+.boards-table th, .boards-table td {
+    border: 1px solid #e0e0e0;
+    padding: 0.5em 0.7em;
+    text-align: left;
+}
+.boards-table th {
+    background: #f0f0e0;
+    color: #333;
+    font-weight: 600;
+}
+.boards-table tr:nth-child(even) {
+    background: #fafaf5;
+}
+.boards-table tr:hover {
+    background: #f5f5dc;
+}
+.boards-table a {
+    color: #0645ad;
+    text-decoration: none;
+}
+.boards-table a:hover {
+    text-decoration: underline;
+}
+
+/* Стили для тегов */
+.board-tag, .search-tag {
+    display: inline-block;
+    background: #fffbe6;
+    color: #b88a00;
+    border: 1px solid #e0c97f;
+    border-radius: 6px;
+    padding: 0.1em 0.7em 0.1em 0.7em;
+    font-size: 0.98em;
+    font-weight: 600;
+    margin: 0 0.2em 0.2em 0;
+    letter-spacing: 0.01em;
+    vertical-align: middle;
+    transition: background 0.2s, color 0.2s;
+}
+.search-tag:hover, .board-tag:hover {
+    background: #f7e9b0;
+    color: #e0a800;
+    border-color: #e0a800;
+} 
